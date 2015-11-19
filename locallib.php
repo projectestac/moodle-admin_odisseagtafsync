@@ -225,6 +225,7 @@ class odissea_gtaf_synchronizer {
                 mtrace('Sending errors to '.$admin->email.'...');
                 $mailtext = "";
                 foreach ($this->errors as $filename => $error) {
+                    $a = new StdClass();
                     $a->filename = $filename;
                     $a->error = $error;
                     $mailtext .= get_string('mailerrorfile', 'tool_odisseagtafsync', $a)."\n";
@@ -436,7 +437,7 @@ class odissea_gtaf_synchronizer {
                 $key = $filecolumns[$keynum];
                 if (strpos($key, 'profile_field_') === 0) {
                     //NOTE: bloody mega hack alert!!
-                    if (isset($USER->$key) and is_array($USER->$key)) {
+                    if (isset($user->$key) and is_array($user->$key)) {
                         // this must be some hacky field that is abusing arrays to store content and format
                         $user->$key = array();
                         $user->$key['text']   = $value;
@@ -818,7 +819,7 @@ class odissea_gtaf_synchronizer {
                     // save custom profile fields data from csv file
                     profile_save_data($existinguser);
 
-                    events_trigger('user_updated', $existinguser);
+                    \core\event\user_updated::create_from_userid($existinguser->id)->trigger();
 
                     if ($bulk == UU_BULK_UPDATED or $bulk == UU_BULK_ALL) {
                         if (!in_array($user->id, $SESSION->bulk_users)) {
@@ -839,7 +840,7 @@ class odissea_gtaf_synchronizer {
                 }
 
                 if ($dologout) {
-                    session_kill_user($existinguser->id);
+                    \core\session\manager::kill_user_sessions($existinguser->id);
                 }
 
             } else {
@@ -962,7 +963,7 @@ class odissea_gtaf_synchronizer {
                 // make sure user context exists
                 context_user::instance($user->id);
 
-                events_trigger('user_created', $user);
+                \core\event\user_created::create_from_userid($user->id)->trigger();
 
                 if ($bulk == UU_BULK_NEW or $bulk == UU_BULK_ALL) {
                     if (!in_array($user->id, $SESSION->bulk_users)) {
@@ -1079,7 +1080,7 @@ class odissea_gtaf_synchronizer {
                         // if no role, then find "old" enrolment type
                         $addtype = $user->{'type'.$i};
                         if ($addtype < 1 or $addtype > 3) {
-                            $upt->track('enrolments', $strerror.': typeN = 1|2|3', 'error');
+                            $upt->track('enrolments', 'User: typeN = 1|2|3', 'error');
                             continue;
                         } else if (empty($formdata->{'uulegacy'.$addtype})) {
                             continue;
@@ -1362,6 +1363,9 @@ class odissea_gtaf_synchronizer {
 /**
  * Validation callback function - verified the column line of csv file.
  * Converts column names to lowercase too.
+ * @param $columns
+ * @return bool|string
+ * @throws coding_exception
  */
 function validate_user_upload_columns(&$columns) {
     global $STD_FIELDS, $PRF_FIELDS;
@@ -1410,9 +1414,9 @@ function odissea_uu_supported_auths (){
 }
 
 /**
- *
  * @param string $file
  * @param string $folder
+ * @return string
  */
 function get_filename_withoutrepeat ($file, $folder){
     $i = 1;
@@ -1467,7 +1471,7 @@ class odissea_uu_progress_tracker {
 
     /**
      * Flush previous line and start a new one.
-     * @return void
+     * @param int $linenum
      */
     public function flush($linenum = -1) {
         if (empty($this->_row) or empty($this->_row['line']['normal'])) {
