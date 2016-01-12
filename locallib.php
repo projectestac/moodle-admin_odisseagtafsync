@@ -238,7 +238,7 @@ class odissea_gtaf_synchronizer {
     }
 
     function synchro_users($file) {
-        global $SESSION, $CFG, $DB, $STD_FIELDS, $PRF_FIELDS, $PAGE;
+        global $SESSION, $CFG, $DB, $STD_FIELDS, $PRF_FIELDS, $PAGE, $USER;
 
         $settings = get_config('tool_odisseagtafsync');
 
@@ -437,7 +437,7 @@ class odissea_gtaf_synchronizer {
                 $key = $filecolumns[$keynum];
                 if (strpos($key, 'profile_field_') === 0) {
                     //NOTE: bloody mega hack alert!!
-                    if (isset($user->$key) and is_array($user->$key)) {
+                    if (isset($USER->$key) and is_array($USER->$key)) {
                         // this must be some hacky field that is abusing arrays to store content and format
                         $user->$key = array();
                         $user->$key['text']   = $value;
