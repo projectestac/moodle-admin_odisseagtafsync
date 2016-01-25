@@ -44,10 +44,8 @@ $string['manualnotenabled'] = 'The \'Manual\' enrol plugin is not enabled. It\'s
 $string['manualsyncheader'] = 'Manual synchronization';
 $string['manualsyncdesc'] = 'Let starts manually the synchronization process.<br/><br/>';
 $string['manualsync'] = 'Sync';
-$string['movefileheader'] = 'File transfer';
-$string['movefiledesc'] = 'Let move a file from backup folder to pending files directory.<br/><br/>';
-$string['movefilename'] = 'Filename';
-$string['movefile'] = 'Move';
+$string['managefiledesc'] = 'Let move a file from backup folder to pending files directory.<br/><br/>';
+$string['managefiles'] = 'Manage files';
 $string['nosyncfiles'] = 'There is no pending file to process.';
 $string['outputfolderpath'] = 'Moodle folder';
 $string['outputfolderpath_help'] = 'Moodle folder where to download FTP files, save log... <ul><li>FTP files are downloaded to "pending" folder and remain there until they\'re processed.</li><li>Backup files are saved in "backup" folder before processing them.</li><li>Log files are created after every sync execution and stored in "results" directory.</li></ul>';
@@ -62,30 +60,3 @@ $string['restorefile_filenofound'] = 'The specified file was not found (<b>{$a}<
 $string['restorefile_nofile'] = 'There was no file to copy to the import folder.';
 $string['syncusersok'] = 'The users in the {$a} file have been created correctly.';
 $string['username'] = 'FTP username';
-$string[''] = '';
-
-
-
-
-
-
-
-
-/*
-$string['pluginname'] = 'Odissea-GTAF Synchronization';
-$string['ftphost'] = 'FTP Host';
-$string['username'] = 'FTP Username';
-$string['password'] = 'FTP Password';
-$string['inputpath'] = 'Directory for input data files';
-$string['outputfolderpath'] = 'Directory for log files';
-$string['paramsdesc'] = 'Configuration parameters';
-$string['configheader'] = 'Configuration parameters';
-$string['manualsyncheader'] = 'Manual synchronization';
-$string['manualsyncdesc'] = 'Starts manually the synchronization process';
-$string['manualsync'] = 'Sync';
-$string['movefileheader'] = 'Move file';
-$string['movefiledesc'] = '';
-$string['movefilename'] = 'Filename';
-$string['movefile'] = 'Move';
-$string[''] = '';
-*/

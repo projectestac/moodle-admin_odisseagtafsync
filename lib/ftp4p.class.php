@@ -13,7 +13,7 @@ class ftp4p {
      * Variables to use
      */
     private $connection, $host, $name, $pass, $permanent; // ftp 
-    private $islogger, $logger, $debug;                   // log
+    private $logger;                   // log
     private $errors = array('connection' => false);      // errors
 
     /**
@@ -30,12 +30,9 @@ class ftp4p {
     function __construct($host = '', $user = '', $pass = '', $permanent = true, $debug = false, $debugpath = null) {
 
         //set up logger class
-        $this->islogger = $this->get_logger($debug, $debugpath);
+        $this->logger = $this->get_logger($debug, $debugpath);
 
-        //store info log
-        if ($this->islogger) {
-            $this->logger->add('ftp4p.class.php: Loading class...');
-        }
+        $this->add_log('Loading class...');
 
         //set up use variables
         $this->permanent = $permanent;
@@ -50,13 +47,10 @@ class ftp4p {
             $this->close_connection();
         }
 
-        //store info log
-        if ($this->islogger) {
-            if (in_array(true, $this->errors)) {
-                $this->logger->add('ftp4p.class.php: Class loaded but with errors', 'WARNING');
-            } else {
-                $this->logger->add('ftp4p.class.php: Class loaded successfull');
-            }
+        if (in_array(true, $this->errors)) {
+            $this->add_log('Class loaded but with errors', 'WARNING');
+        } else {
+            $this->add_log('Class loaded successfull');
         }
     }
 
@@ -70,26 +64,18 @@ class ftp4p {
      */
     private function connect($host = '', $user = '', $pass = '') {
 
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4p.class.php: Connecting...', 'DEBUG');
-        }
+        $this->add_log('Connecting...', 'DEBUG');
 
         //reset connection error value
         $this->errors['connection'] = false;
 
         //check if any arg is empty
         if (empty($this->host) || empty($this->user) || empty($this->pass)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4p.class.php: Connection failed, there is some connect value empty', 'ERROR');
-            }
+            $this->add_log('Connection failed, there is some connect value empty', 'ERROR');
             $this->errors['connection'] = true;
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4p.class.php: Connection values: {host:' . $this->host . ', user:' . $this->user . ', pass:' . $this->pass . '}', 'DEBUG');
-        }
+        $this->add_log('Connection values: {host:' . $this->host . ', user:' . $this->user . ', pass:' . $this->pass . '}', 'DEBUG');
 
         //test host
         $url = parse_url($this->host);
@@ -99,36 +85,23 @@ class ftp4p {
             $url->port = 21;
         }
         if (!$this->connection = @ftp_connect($url->host, $url->port)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4p.class.php: Connection failed, host "' . $this->host . '" unavailable', 'ERROR');
-            }
+            $this->add_log('Connection failed, host "' . $this->host . '" unavailable', 'ERROR');
             $this->errors['connection'] = true;
             return false;
         } 
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4p.class.php: Connected to host', 'DEBUG');
-        }
+        $this->add_log('Connected to host', 'DEBUG');
 
         //test login
         if (!@ftp_login($this->connection, $this->user, $this->pass)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4p.class.php: Connection failed, login values are incorrect', 'ERROR');
-            }
+            $this->add_log('Connection failed, login values are incorrect', 'ERROR');
             $this->errors['connection'] = true;
             return false;
         } else {
             // Activate passive mode
             @ftp_pasv($this->connection, true);
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4p.class.php: Login done successfully', 'DEBUG');
-        }
-        //store info log
-        if ($this->islogger) {
-            $this->logger->add('ftp4p.class.php: Connected successfully');
-        }
+        $this->add_log('Login done successfully', 'DEBUG');
+        $this->add_log('Connected successfully');
 
         return true;
     }
@@ -140,22 +113,14 @@ class ftp4p {
      */
     private function close_connection() {
 
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4p.class.php: Closing connection...', 'DEBUG');
-        }
+        $this->add_log('Closing connection...', 'DEBUG');
 
         //try to close connection
         if (!ftp_close($this->connection)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4p.class.php: Closing connection failed, imposible to close', 'ERROR');
-            }
+            $this->add_log('Closing connection failed, imposible to close', 'ERROR');
             return false;
         }
-        //store info log
-        if ($this->islogger) {
-            $this->logger->add('ftp4.class.php: Connection closed successfully');
-        }
+        $this->add_log('Connection closed successfully');
 
         $this->connection = false;
         return true;
@@ -169,28 +134,18 @@ class ftp4p {
      */
     public function get_dir_list($path = '') {
 
-        //store debug path
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting path list...', 'DEBUG');
-        }
+        $this->add_log('Getting path list...', 'DEBUG');
 
         //check if argument is empty
         if (empty($path)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting path fails, $path parameter is empty', 'ERROR');
-            }
+            $this->add_log('Getting path fails, $path parameter is empty', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting path values: {path:' . $path . '}', 'DEBUG');
-        }
+        $this->add_log('Getting path values: {path:' . $path . '}', 'DEBUG');
 
         //check if connection is correct
         if ($this->errors['connection']) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting file stopped, becouse connection values are incorrect', 'ERROR');
-            }
+            $this->add_log('Getting file stopped, becouse connection values are incorrect', 'ERROR');
             return false;
         }
 
@@ -203,30 +158,20 @@ class ftp4p {
 
         //check if isset the given path
         if (!@ftp_chdir($this->connection, $path)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting path fails, path not exits', 'ERROR');
-            }
+            $this->add_log('Getting path fails, path not exits', 'ERROR');
             return false;
         }
 
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Check getting path successfully', 'DEBUG');
-        }
+        $this->add_log('Check getting path successfully', 'DEBUG');
 
         //try to get the files list
         $flist = ftp_nlist($this->connection, $path);
         if ($flist === FALSE) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting path fails, ftp nlist return error', 'ERROR');
-            }
+            $this->add_log('Getting path fails, ftp nlist return error', 'ERROR');
             return false;
         }
 
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting path successfully', 'DEBUG');
-        }
+        $this->add_log('Getting path successfully', 'DEBUG');
 
         //process list for just return files
         $flistcleaned = array();
@@ -237,20 +182,14 @@ class ftp4p {
                 }
             }
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting path list cleaned successfully', 'DEBUG');
-        }
+        $this->add_log('Getting path list cleaned successfully', 'DEBUG');
 
         //if connection is not permanetly close it
         if (!$this->permanent) {
             $this->close_connection();
         }
 
-        //store info log
-        if ($this->islogger) {
-            $this->logger->add('ftp4.class.php: Getting path successfull. Values: {' . serialize($flistcleaned) . '}');
-        }
+        $this->add_log('Getting path successfull. Values: {' . serialize($flistcleaned) . '}');
 
         return $flistcleaned;
     }
@@ -260,28 +199,18 @@ class ftp4p {
      */
     function get_file($remotefile = '', $localfile = '', $returnhandler = true) {
 
-        //store debug path
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting file '.$localfile.'...', 'DEBUG');
-        }
+        $this->add_log('Getting file '.$localfile.'...', 'DEBUG');
 
         //check if argument is empty
         if (empty($remotefile) || empty($localfile)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting file fails, $remotefile parameter is empty', 'ERROR');
-            }
+            $this->add_log('Getting file fails, $remotefile parameter is empty', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting file values: {remotefile:' . $remotefile . ', localfile:' . $localfile . ', returnhandler:' . $returnhandler . '}', 'DEBUG');
-        }
+        $this->add_log('Getting file values: {remotefile:' . $remotefile . ', localfile:' . $localfile . ', returnhandler:' . $returnhandler . '}', 'DEBUG');
 
         //check if connection is correct
         if ($this->errors['connection']) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting file stopped, becouse connection values are incorrect', 'ERROR');
-            }
+            $this->add_log('Getting file stopped, becouse connection values are incorrect', 'ERROR');
             return false;
         }
 
@@ -293,27 +222,17 @@ class ftp4p {
         }
         //set local file
         if (!$f = fopen($localfile, "w+")) {
-            if ($this->logger) {
-                $this->logger->add('ftp4.class.php: Getting file fails, imposible to open local file', 'ERROR');
-            }
+            $this->add_log('Getting file fails, imposible to open local file', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting file open local file successfull', 'DEBUG');
-        }
+        $this->add_log('Getting file open local file successfull', 'DEBUG');
 
         //get remote file to local
         if (!ftp_fget($this->connection, $f, $remotefile, FTP_BINARY)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Getting file fails, imposible to download file fron ftp server', 'ERROR');
-            }
+            $this->add_log('Getting file fails, imposible to download file fron ftp server', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Getting file downloaded successfull');
-        }
+        $this->add_log('Getting file downloaded successfull');
 
         //if connection is not permanetly close it
         if (!$this->permanent) {
@@ -325,9 +244,7 @@ class ftp4p {
             return $f;
         } else {
             if (!fclose($f)) {
-                if ($this->islogger) {
-                    $this->logger->add('ftp4.class.php: Getting file return error when try to close the pointer to the file', 'WARNING');
-                }
+                $this->add_log('Getting file return error when try to close the pointer to the file', 'WARNING');
             }
             return $localfile;
         }
@@ -338,28 +255,18 @@ class ftp4p {
      */
     function set_file($remotefile = '', $localfile = '', $returnhandler = true) {
 
-        //store debug path
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Setting file...', 'DEBUG');
-        }
+        $this->add_log('Setting file...', 'DEBUG');
 
         //check if argument is empty
         if (empty($remotefile) || empty($localfile)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Setting file fails, $remotefile parameter is empty', 'ERROR');
-            }
+            $this->add_log('Setting file fails, $remotefile parameter is empty', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Setting file values: {remotefile:' . $remotefile . ', localfile:' . $localfile . ', returnhandler:' . $returnhandler . '}', 'DEBUG');
-        }
+        $this->add_log('Setting file values: {remotefile:' . $remotefile . ', localfile:' . $localfile . ', returnhandler:' . $returnhandler . '}', 'DEBUG');
 
         //check if connection is correct
         if ($this->errors['connection']) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Setting file stopped, becouse connection values are incorrect', 'ERROR');
-            }
+            $this->add_log('Setting file stopped, becouse connection values are incorrect', 'ERROR');
             return false;
         }
 
@@ -372,27 +279,17 @@ class ftp4p {
 
         //set local file
         if (!$f = fopen($localfile, "r")) {
-            if ($this->logger) {
-                $this->logger->add('ftp4.class.php: Setting file fails, imposible to open local file', 'ERROR');
-            }
+            $this->add_log('Setting file fails, imposible to open local file', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Setting file open local file successfull', 'DEBUG');
-        }
+        $this->add_log('Setting file open local file successfull', 'DEBUG');
 
         //get remote file to local
         if (!ftp_fput($this->connection, $remotefile, $f, FTP_BINARY)) {
-            if ($this->islogger) {
-                $this->logger->add('ftp4.class.php: Setting file fails, imposible to upload file', 'ERROR');
-            }
+            $this->add_log('Setting file fails, imposible to upload file', 'ERROR');
             return false;
         }
-        //store debug log
-        if ($this->debug) {
-            $this->logger->add('ftp4.class.php: Setting file downloaded successfull');
-        }
+        $this->add_log('Setting file downloaded successfull');
 
         //if connection is not permanetly close it
         if (!$this->permanent) {
@@ -404,9 +301,7 @@ class ftp4p {
             return $f;
         } else {
             if (!fclose($f)) {
-                if ($this->islogger) {
-                    $this->logger->add('ftp4.class.php: Setting file return error when try to close the pointer to the file', 'WARNING');
-                }
+                $this->add_log('Setting file return error when try to close the pointer to the file', 'WARNING');
             }
             return $localfile;
         }
@@ -429,37 +324,51 @@ class ftp4p {
     }
 
     /**
-     * Print de log generated by the class
-     * 
-     * @return string -> full string with the log
-     */
-    function print_log() {
-
-        if ($this->islogger && $log = $this->logger->get_log('<br>')) {
-            echo '<br><br><b>Log generated on ' . time() . ':</b><br>' . $log;
-        }
-
-        return;
-    }
-
-    /**
      * Check if isset the logger class, else denie any log
      * 
      * @param bool $debug -> activate debug mode or not
-     * @param string $debugpath -> path where to store log file
+     * @param string $path -> path where to store log file
      * @return bool       -> true if logger could be loaded or false if not
      */
-    private function get_logger($debug = false, $debugpath = null) {
+    private function get_logger($debug = false, $path = '') {
         if (!@include_once('log4p.class.php')) {
-            $this->logger = false;
-            $this->debug = false;
             return false;
         }
-        $this->logger = new log4p($debug, $debugpath.'/log/ftp4p.log');
-        if ($debug) {
-            $this->debug = $debug;
+        try {
+            return log4p::instance(true, $path, $debug);
+        } catch (Exception $e) {
+            debugging('ERROR: Cannot initialize apligestlogger, there won\'t be any log.');
+            debugging($e->getMessage());
         }
-        return true;
+        return false;
     }
 
+    /**
+     * Shows a message when php debug is in the highest error_reporting
+     */
+    private static function debugging($message) {
+        $debugdisplay = ini_get('display_errors');
+        if (($debugdisplay == '1' || strtolower($debugdisplay) == 'on') && (error_reporting() >= E_ALL | E_STRICT)) {
+            if (defined('CLI_SCRIPT') && CLI_SCRIPT) {
+                echo "++ $message ++\n";
+            } else {
+                echo '<div class="notifytiny debuggingmessage" data-rel="debugging">' , $message , '</div>';
+            }
+        }
+    }
+    private function add_log ($str, $type = 'INFO*') {
+        if ($this->logger) {
+            $this->logger->add('ftp4p: '.$str, $type);
+        }
+    }
+    /**
+     * Print de log generated by the class
+     *
+     * @return string -> full string with the log
+     */
+    public function print_log() {
+        if ($this->logger) {
+            $this->logger->print_log();
+        }
+    }
 }

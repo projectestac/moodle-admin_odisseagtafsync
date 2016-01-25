@@ -87,11 +87,6 @@ class odissea_gtaf_synchronizer {
                                     //1: Yes
 
     function __construct($iscron = false) {
-
-        //set system configuration
-        @set_time_limit(1800); // 30 minuts should be enough
-        @raise_memory_limit('256M');
-
         //set parameters
         global $CFG, $USER;
 
@@ -101,12 +96,6 @@ class odissea_gtaf_synchronizer {
 
         //check if can connect with FTP server
         $this->inputpath = $settings->inputpath;
-        $this->ftp = new ftp4p($settings->ftphost, $settings->ftpusername, $settings->ftppassword, true, true, $CFG->dataroot . '/' . $settings->outputpath);
-        $this->files = $this->ftp->get_dir_list($this->inputpath);
-        if ($this->files === FALSE) {
-            $this->isfolders = false;
-            $this->errors[] = get_string('ftpdirlisterror', 'tool_odisseagtafsync');
-        }
 
         // Initialize all folders if needed
         $this->outputpath = $CFG->dataroot . '/' . $settings->outputpath;
@@ -131,28 +120,96 @@ class odissea_gtaf_synchronizer {
         make_writable_directory($this->outputpath . '/' . self::SYNCHRO_BACKUP_ERRORFOLDER);
     }
 
-    function prepare_folder($folder){
-        if (!is_dir($folder)) {
-            if (!$this->create_upload_directory($folder)) {
-                $this->isfolders = false;
-                $this->errors[] = get_string('createpatherror', 'tool_odisseagtafsync', $folder);
-            }
+    function get_files_backup() {
+        $filepaths = glob ($this->outputbackuppath.'/*');
+        return self::filter_files($filepaths);
+    }
+
+    function get_files_pending() {
+        $filepaths = glob ($this->outputtmppath.'/*');
+        return self::filter_files($filepaths);
+    }
+
+    function get_files_ftp() {
+        $this->connect();
+        return $this->files;
+    }
+
+    /**
+     *
+     * @param string $file Filename to restore from backup folder
+     */
+    function restore_file($file) {
+        global $PAGE;
+
+        if (empty($file)) {
+            $this->errors[] = get_string('restorefile_nofile', 'tool_odisseagtafsync');
+            return;
         }
+
+        if (!is_file($this->outputbackuppath . '/' . $file)) {
+            $this->errors[] = get_string('restorefile_filenofound', 'tool_odisseagtafsync', $file);
+            return;
+        }
+
+        if (file_exists($this->outputtmppath . '/' . $file)) {
+            $this->errors[] = get_string('restorefile_fileexists', 'tool_odisseagtafsync', $file);
+            return;
+        }
+
+        if (!copy($this->outputbackuppath . '/' . $file, $this->outputtmppath. '/' . $file)) {
+            $this->errors[] = get_string('restorefile_errorcopyingfile', 'tool_odisseagtafsync', $file);
+            return;
+        }
+
+        $renderer = $PAGE->get_renderer('tool_odisseagtafsync');
+        $results[$file] = $renderer->process_restore_file_page($file);
+
+        return $results;
+    }
+
+    /**
+     *
+     * @param string $file Filename to restore from backup folder
+     */
+    function delete_file($file) {
+        global $PAGE;
+
+        if (empty($file)) {
+            $this->errors[] = get_string('deletefile_nofile', 'tool_odisseagtafsync');
+            return;
+        }
+
+        if (!is_file($this->outputtmppath . '/' . $file)) {
+            $this->errors[] = get_string('deletefile_filenofound', 'tool_odisseagtafsync', $file);
+            return;
+        }
+
+        if (!unlink($this->outputtmppath. '/' . $file)) {
+            $this->errors[] = get_string('deletefile_errordeletingfile', 'tool_odisseagtafsync', $file);
+            return;
+        }
+
+        $renderer = $PAGE->get_renderer('tool_odisseagtafsync');
+        $results[$file] = $renderer->process_delete_file_page($file);
+
+        return $results;
     }
 
     function synchro() {
         global $CFG;
 
+        //set system configuration
+        @set_time_limit(1800); // 30 minutes should be enough
+        @raise_memory_limit('256M');
+
+        $this->connect();
+
         $results = array();
 
         // Check if there are errors to avoid synchro
         if (!$this->isfolders) {
-            if (!$this->iscron) {
-                //error(implode(', ', $this->errors), $this->returnurl);
-                return "";
-            } else {
-                return implode(', ', $this->errors);
-            }
+            return "";
         }
 
         require_once($CFG->libdir . '/adminlib.php');
@@ -162,58 +219,41 @@ class odissea_gtaf_synchronizer {
         // Download getted files list
         if (is_array($this->files)) {
             foreach ($this->files as $file) {
-                $fnamearray = explode("/", $file);
-                $fname = $fnamearray[count($fnamearray) - 1];
-                $prefixfname = substr($fname, 0, strlen($fname) - 16);
-                if ($prefixfname == self::SYNCHRO_STUDENT
-                        || $prefixfname == self::SYNCHRO_TEACHERS
-//                        || $prefixfname == self::SYNCHRO_ENROLMENTS   // Commented to avoid unenrolments - Request of Odissea team (20131014)
-                        ) {
-                    if ($this->iscron) {
-                        mtrace(' Retrieving file: '.$fname);
-                    }
-                    if (!$this->ftp->get_file($file, $this->outputtmppath . '/' . $fname, false)) {
-                        if ($this->iscron) {
-                            mtrace('  Cannot get file!');
-                        }
-                        continue;
-                    }
-                    // Delete from FTP server the downloaded files
-                    $this->ftp->del_file($file);
+                $this->cronlog(' Retrieving file: '.$file);
+                if (!$this->ftp->get_file($file, $this->outputtmppath . '/' . $file, false)) {
+                    $this->cronlog('  Cannot get file!');
+                    continue;
                 }
+                // Delete from FTP server the downloaded files
+                $this->ftp->del_file($file);
             }
         }
 
-
         // Check if there are new files
-        if ($files = opendir($this->outputtmppath)) {
-            while (($file = readdir($files)) !== false) {
-                if (is_file($this->outputtmppath . '/' . $file)) {
-                    // Check files type to call the appropriate function
-                    switch (substr($file, 0, strlen($file) - 16)) {
-                        case self::SYNCHRO_STUDENT:
-                        case self::SYNCHRO_TEACHERS:
-                            if ($this->iscron) {
-                                mtrace(' Processing ...'.$file);
-                            }
-                            try {
-                                $result = $this->synchro_users($file);
-                                $results[$file] = $result;
-                            } catch(Exception $e) {
-                                $result = $file.': '.$e->getMessage();
-                                $results[$file] = false;
-                                $this->errors[$file] = $result;
-                            }
-                            if ($this->iscron) {
-                                mtrace($result);
-                            }
-                            break;
+        $files = $this->get_files_pending();
+        foreach($files as $file) {
+            if (is_file($this->outputtmppath . '/' . $file)) {
+                $prefix = self::get_prefix($file);
+                // Check files type to call the appropriate function
+                switch ($prefix) {
+                    case self::SYNCHRO_STUDENT:
+                    case self::SYNCHRO_TEACHERS:
+                        $this->cronlog(' Processing ...' . $file);
+                        try {
+                            $result = $this->synchro_users($file);
+                            $results[$file] = $result;
+                        } catch (Exception $e) {
+                            $result = $file . ': ' . $e->getMessage();
+                            $results[$file] = false;
+                            $this->errors[$file] = $result;
+                        }
+                        $this->cronlog($result);
+                        break;
                     /* Commented to avoid unenrolments - Request of Odissea team (20131014)
                         case self::SYNCHRO_ENROLMENTS:
                             $results[$file] = $this->synchro_enrolments($file);
                             break;
                     */
-                    }
                 }
             }
         }
@@ -222,7 +262,7 @@ class odissea_gtaf_synchronizer {
             // Send errors
             if (self::SYNCHRO_MAILADMINS == 1) {
                 $admin = get_admin();
-                mtrace('Sending errors to '.$admin->email.'...');
+                $this->cronlog('Sending errors to '.$admin->email.'...');
                 $mailtext = "";
                 foreach ($this->errors as $filename => $error) {
                     $a = new StdClass();
@@ -236,8 +276,71 @@ class odissea_gtaf_synchronizer {
 
         return $results;
     }
+    
+    private function cronlog($text) {
+        if ($this->iscron) {
+            mtrace($text);
+        } else {
+            //echo "$text\n";
+        }
+    }
 
-    function synchro_users($file) {
+    private function connect() {
+        global $CFG;
+        if (!$this->ftp) {
+            $settings = get_config('tool_odisseagtafsync');
+            $this->ftp = new ftp4p($settings->ftphost, $settings->ftpusername, $settings->ftppassword, true, true, $CFG->dataroot . '/' . $settings->outputpath);
+            $files = $this->ftp->get_dir_list($this->inputpath);
+            if ($files === FALSE) {
+                $this->isfolders = false;
+                $this->files = false;
+                $this->errors[] = get_string('ftpdirlisterror', 'tool_odisseagtafsync');
+            }
+            $this->files = self::filter_files($files);
+        }
+    }
+
+    private static function filter_files($files) {
+        $filtered = array();
+        if (is_array($files)) {
+            foreach ($files as $file) {
+                $fnamearray = explode("/", $file);
+                $filename = array_pop($fnamearray);
+                if (self::get_prefix($filename)) {
+                    $filtered[$file] = $filename;
+                }
+            }
+        }
+        return $filtered;
+    }
+
+    private static function get_prefix($file) {
+        if (substr($file, 0, 7) == self::SYNCHRO_STUDENT) {
+            return self::SYNCHRO_STUDENT;
+        }
+
+        if (substr($file, 0, 10) == self::SYNCHRO_TEACHERS) {
+            return self::SYNCHRO_TEACHERS;
+        }
+
+        // Commented to avoid unenrolments - Request of Odissea team (20131014)
+        /*if (substr($file, 0, 13) == self::SYNCHRO_ENROLMENTS) {
+            return self::SYNCHRO_ENROLMENTS;
+        }*/
+
+        return false;
+    }
+
+    private function prepare_folder($folder){
+        if (!is_dir($folder)) {
+            if (!$this->create_upload_directory($folder)) {
+                $this->isfolders = false;
+                $this->errors[] = get_string('createpatherror', 'tool_odisseagtafsync', $folder);
+            }
+        }
+    }
+
+    private function synchro_users($file) {
         global $SESSION, $CFG, $DB, $STD_FIELDS, $PRF_FIELDS, $PAGE, $USER;
 
         $settings = get_config('tool_odisseagtafsync');
@@ -249,8 +352,8 @@ class odissea_gtaf_synchronizer {
         }
 
         // Create a backup of downloaded file
-        $filename = get_filename_withoutrepeat($file, $this->outputpath . '/' . self::SYNCHRO_BACKUPFOLDER);
-        if (!copy($this->outputtmppath . '/' . $file, $this->outputpath . '/' . self::SYNCHRO_BACKUPFOLDER . '/' . $filename)) {
+        $filename = get_filename_withoutrepeat($file, $this->outputbackuppath . '/');
+        if (!copy($this->outputtmppath . '/' . $file, $this->outputbackuppath . '/' . $filename)) {
             throw new Exception('Error doing file backup: '.$file);
         }
 
@@ -281,8 +384,6 @@ class odissea_gtaf_synchronizer {
         $strusernotdeletedmissing   = get_string('usernotdeletedmissing', 'error');
         $strusernotdeletedoff       = get_string('usernotdeletedoff', 'error');
         $strusernotdeletedadmin     = get_string('usernotdeletedadmin', 'error');
-
-        $strcannotassignrole        = get_string('cannotassignrole', 'error');
 
         $struserauthunsupported     = get_string('userauthunsupported', 'error');
         $stremailduplicate          = get_string('useremailduplicate', 'error');
@@ -1042,8 +1143,7 @@ class odissea_gtaf_synchronizer {
                         //ODISSEAGTAFSYNC-XTEC ************ MODIFICAT - Add enrol manual instance to the course if it isn't
                         //2013.08.23 @sarjona
                         //2013.10.14 @aginard: changed 'flatfile' by 'manual'
-                        $instance = $DB->get_record('enrol',
-                                        array('courseid' => $courseid, 'enrol' => 'manual'));
+                        $instance = $DB->get_record('enrol', array('courseid' => $courseid, 'enrol' => 'manual'));
                         if (empty($instance)) {
                             $enrol_manual = new enrol_manual_plugin();
                             $enrolid = $enrol_manual->add_instance($course);
@@ -1178,6 +1278,7 @@ class odissea_gtaf_synchronizer {
 
         // If have been some error, send mail to admin
         if (self::SYNCHRO_MAILADMINS == 1 && ($userserrors > 0 || $usersskipped > 0)) {
+            $a = new StdClass();
             $a->filename = $filename;
             $a->errors = ($userserrors > 0) ? $userserrors : 0;
             $a->warnings = ($usersskipped > 0) ? $usersskipped : 0;
@@ -1216,7 +1317,7 @@ class odissea_gtaf_synchronizer {
      * @param string $file Filename with enrolments
      * @return boolean
      */
-    function synchro_enrolments($file) {
+    private function synchro_enrolments($file) {
         global $PAGE;
 
         // Create a backup of downloaded file
@@ -1258,7 +1359,7 @@ class odissea_gtaf_synchronizer {
         return $results;
     }
 
-    function save_logs($logs, $filename) {
+    private function save_logs($logs, $filename) {
         if (!empty($logs)) {
             //transform array to string
             $str = '';
@@ -1292,7 +1393,7 @@ class odissea_gtaf_synchronizer {
      * @param string $directory  a string of directory names
      * @return string|false Returns full path to directory if successful, false if not
      */
-    function create_upload_directory($directory) {
+    private function create_upload_directory($directory) {
         global $CFG;
 
         umask(0000);
@@ -1321,42 +1422,6 @@ class odissea_gtaf_synchronizer {
         }
         return $currdir;
     }
-
-    /**
-     *
-     * @param string $file Filename to restore from backup folder
-     */
-    function restore_file($file) {
-        global $PAGE;
-
-        if (empty($file)) {
-            $this->errors[] = get_string('restorefile_nofile', 'tool_odisseagtafsync');
-            return;
-        }
-
-        if (!is_file($this->outputbackuppath . '/' . $file)) {
-            $this->errors[] = get_string('restorefile_filenofound', 'tool_odisseagtafsync', $file);
-            return;
-        }
-
-        if (file_exists($this->outputtmppath . '/' . $file)) {
-            $this->errors[] = get_string('restorefile_fileexists', 'tool_odisseagtafsync', $file);
-            return;
-        }
-
-        if (!copy($this->outputbackuppath . '/' . $file, $this->outputtmppath. '/' . $file)) {
-            $this->errors[] = get_string('restorefile_errorcopyingfile', 'tool_odisseagtafsync', $file);
-            return;
-        }
-
-        $renderer = $PAGE->get_renderer('tool_odisseagtafsync');
-        $params = array();
-        $params['file'] = $file;
-        $results[$file] = $renderer->process_restore_file_page($params);
-
-        return $results;
-    }
-
 }
 
 

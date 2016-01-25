@@ -29,9 +29,6 @@
 require_once(dirname(__FILE__) . '/../../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once(dirname(__FILE__) . '/locallib.php');
-require_once(dirname(__FILE__) . '/config_form.php');
-require_once(dirname(__FILE__) . '/sync_form.php');
-require_once(dirname(__FILE__) . '/move_form.php');
 
 // admin_externalpage_setup calls require_login and checks moodle/site:config
 admin_externalpage_setup('odisseagtafsync');
@@ -40,57 +37,41 @@ $renderer = $PAGE->get_renderer('tool_odisseagtafsync');
 
 $header = get_string('pluginname', 'tool_odisseagtafsync');
 
-$form_config = new tool_odisseagtafsync_config_form(
-        new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php'));
-$form_sync = new tool_odisseagtafsync_sync_form(
-        new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/synchronizer.php'));
-$form_move = new tool_odisseagtafsync_move_form(
-        new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/synchronizer.php'));
+$synchro = new odissea_gtaf_synchronizer();
+$sync = optional_param('sync', false, PARAM_BOOL);
+if ($sync) {
+    $result = $synchro->synchro();
+    echo $renderer->sync_page(1, $result, $synchro->errors);
+} else {
+    echo $renderer->header();
+    echo $renderer->heading(get_string('pluginname', 'tool_odisseagtafsync'));
+    echo $renderer->box(get_string('manualsyncdesc', 'tool_odisseagtafsync'));
 
-$form_config->set_data(get_config('tool_odisseagtafsync'));
+    $files = $synchro->get_files_ftp();
+    if (empty($files)) {
+        echo $OUTPUT->notification('No hi ha fitxers al FTP');
+    } else {
+        echo '<strong>Fitxers disponibles al servidor:</strong>';
+        echo '<ul>';
+        foreach($files as $file) {
+            echo '<li>'.$file.'</li>';
+        }
+        echo '</ul>';
+    }
 
-$returnurl = new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php');
+    $pending = $synchro->get_files_pending();
+    echo '<strong>Fitxers pendents d\'importar:</strong>';
+    if (empty($pending)) {
+        echo $OUTPUT->notification('No hi ha fitxers a la carpeta de fitxers per importar');
+    } else {
+        echo '<ul>';
+        foreach($pending as $filepath => $file) {
+            $filesize = round(filesize($filepath)/1024);
+            echo '<li>'.$file.' '.$filesize.'kB</li>';
+        }
+        echo '</ul>';
+    }
 
-if ($form_config->is_cancelled()) {
-    redirect($returnurl);
-} else if ($fromform = $form_config->get_data()) {
-    set_config('ftphost', $fromform->ftphost, 'tool_odisseagtafsync');
-    set_config('ftpusername', $fromform->ftpusername, 'tool_odisseagtafsync');
-    set_config('ftppassword', $fromform->ftppassword, 'tool_odisseagtafsync');
-    set_config('inputpath', $fromform->inputpath, 'tool_odisseagtafsync');
-    set_config('outputpath', $fromform->outputpath, 'tool_odisseagtafsync');
-
-    set_config('uutype', $fromform->uutype, 'tool_odisseagtafsync');
-    set_config('uuupdatetype', $fromform->uuupdatetype, 'tool_odisseagtafsync');
-    set_config('uunoemailduplicates', $fromform->uunoemailduplicates, 'tool_odisseagtafsync');
-    set_config('uustandardusernames', $fromform->uustandardusernames, 'tool_odisseagtafsync');
-    set_config('uulegacy1', $fromform->uulegacy1, 'tool_odisseagtafsync');
-    set_config('uulegacy2', $fromform->uulegacy2, 'tool_odisseagtafsync');
-    set_config('uulegacy3', $fromform->uulegacy3, 'tool_odisseagtafsync');
-
-    set_config('auth', $fromform->auth, 'tool_odisseagtafsync');
-    set_config('maildisplay', $fromform->maildisplay, 'tool_odisseagtafsync');
-    set_config('mailformat', $fromform->mailformat, 'tool_odisseagtafsync');
-    set_config('maildigest', $fromform->maildigest, 'tool_odisseagtafsync');
-    set_config('autosubscribe', $fromform->autosubscribe, 'tool_odisseagtafsync');
-    set_config('trackforums', $fromform->trackforums, 'tool_odisseagtafsync');
-    set_config('htmleditor', $fromform->htmleditor, 'tool_odisseagtafsync');
-    set_config('country', $fromform->country, 'tool_odisseagtafsync');
-    set_config('timezone', $fromform->timezone, 'tool_odisseagtafsync');
-    set_config('lang', $fromform->lang, 'tool_odisseagtafsync');
-
-    redirect($returnurl);
+    echo $OUTPUT->single_button('?sync=true', get_string('manualsync', 'tool_odisseagtafsync'));
+    echo $renderer->footer();
 }
-
-
-//echo '<pre>';
-//var_dump($form);
-//echo '</pre>';
-
-echo $renderer->header();
-echo $renderer->heading(get_string('pluginname', 'tool_odisseagtafsync'));
-echo $renderer->box(get_string('paramsdesc', 'tool_odisseagtafsync'));
-$form_config->display();
-$form_sync->display();
-$form_move->display();
-echo $renderer->footer();

@@ -158,16 +158,23 @@ class tool_odisseagtafsync_config_form extends moodleform {
 
         $editors = editors_get_enabled();
         if (count($editors) > 1) {
-            $choices = array();
-            $choices['0'] = get_string('texteditor');
-            $choices['1'] = get_string('htmleditor');
+            $choices = array('' => get_string('defaulteditor'));
+            $firsteditor = '';
+            foreach (array_keys($editors) as $editor) {
+                if (!$firsteditor) {
+                    $firsteditor = $editor;
+                }
+                $choices[$editor] = get_string('pluginname', 'editor_' . $editor);
+            }
             $mform->addElement('select', 'htmleditor', get_string('textediting'), $choices);
-            $mform->setDefault('htmleditor', 1);
+            $mform->setDefault('htmleditor', '');
         } else {
+            // Empty string means use the first chosen text editor.
             $mform->addElement('hidden', 'htmleditor');
-            $mform->setDefault('htmleditor', 1);
-            $mform->setType('htmleditor', PARAM_INT);
+            $mform->setDefault('htmleditor', '');
+            $mform->setType('htmleditor', PARAM_PLUGIN);
         }
+
         $mform->setAdvanced('htmleditor');
 
         $mform->addElement('select', 'country', get_string('selectacountry'), get_string_manager()->get_list_of_countries());

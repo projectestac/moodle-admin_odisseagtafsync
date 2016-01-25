@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,18 +14,24 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+
 /**
- * Version details.
+ *  Sync with Gtaf database.
  *
- * @package    tool
- * @subpackage odisseagtafsync
- * @copyright  2013 Departament d'Ensenyament de la Generalitat de Catalunya
- * @author     Sara Arjona Téllez <sarjona@xtec.cat>
+ * @package    tool_odisseagtafsync
+ * @copyright  2016 Pau Ferrer <pferre22@xtec.cat>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2015012501;
-$plugin->requires  = 2012112900;
-$plugin->component = 'tool_odisseagtafsync';
+// List of tasks.
+$tasks = array(
+    array(
+        'classname' => 'tool_odisseagtafsync\task\sync',
+        'blocking' => 0,
+        'minute' => '*',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    )
+);

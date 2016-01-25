@@ -54,7 +54,7 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
             }
         }
 
-        $output .= $this->back_to_index();
+        $output .= $this->back_to_index($run);
         $output .= $this->footer();
         return $output;
     }
@@ -102,13 +102,20 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
         return $output;
     }
 
-    public function process_restore_file_page($params) {
-        extract($params);
-
+    public function process_restore_file_page($file) {
         $output = '';
         $output .= $this->heading($file);
         $output .=  '<p><br/>';
         $output .=  get_string('processrestorefileok', 'tool_odisseagtafsync');
+        $output .=  '<br/><br/></p>';
+        return $output;
+    }
+
+    public function process_delete_file_page($file) {
+        $output = '';
+        $output .= $this->heading($file);
+        $output .=  '<p><br/>';
+        $output .=  get_string('processdeletefileok', 'tool_odisseagtafsync');
         $output .=  '<br/><br/></p>';
         return $output;
     }
@@ -129,11 +136,16 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
      * Output a link back to the plugin index page.
      * @return string html to output.
      */
-    public function back_to_index() {
+    public function back_to_index($run) {
         global $CFG;
 
-        return $this->end_of_page_link(new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php'),
+        if ($run == 1) {
+            return $this->end_of_page_link(new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php'),
                 get_string('backtoindex', 'tool_odisseagtafsync'));
+        } else {
+            return $this->end_of_page_link(new moodle_url('/' . $CFG->admin . '/tool/odisseagtafsync/move.php'),
+                get_string('backtoindex', 'tool_odisseagtafsync'));
+        }
     }
 
 }
