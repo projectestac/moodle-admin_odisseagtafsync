@@ -56,7 +56,7 @@ class sync extends \core\task\scheduled_task {
             $synchro = new \odissea_gtaf_synchronizer(true);
             $results = $synchro->synchro();
             if (!empty($synchro->errors)) {
-                foreach($synchro->error as $file => $error) {
+                foreach($synchro->errors as $file => $error) {
                     mtrace($file.': '.$error);
                 }
             }

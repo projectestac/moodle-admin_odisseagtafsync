@@ -75,6 +75,21 @@ if ($action && $filename) {
     echo $renderer->box(get_string('managefiledesc', 'tool_odisseagtafsync'));
     $files = $synchro->get_files_backup();
     $pending = $synchro->get_files_pending();
+
+    echo '<strong>Fitxers pendents d\'importar:</strong>';
+    if (empty($pending)) {
+        echo $OUTPUT->notification('No hi ha fitxers a la carpeta de fitxers per importar');
+    } else {
+        echo '<ul>';
+        foreach($pending as $filepath => $file) {
+            echo '<li>'.$file;
+            echo ' [<a href="?action=delete&file=' . $file . '">Elimina de la carpeta d\'importació de fitxers</a>]';
+            $filesize = round(filesize($filepath)/1024);
+            echo ' '.$filesize.'kB</li>';
+        }
+        echo '</ul>';
+    }
+
     echo '<strong>Fitxers al directori de còpies de seguretat:</strong>';
     if (empty($files)) {
         echo $OUTPUT->notification('No hi ha fitxers a la carpeta de còpies de seguretat');
@@ -87,20 +102,6 @@ if ($action && $filename) {
             } else {
                 echo ' [Ja existeix a la carpeta d\'importació]';
             }
-            $filesize = round(filesize($filepath)/1024);
-            echo ' '.$filesize.'kB</li>';
-        }
-        echo '</ul>';
-    }
-
-    echo '<strong>Fitxers pendents d\'importar:</strong>';
-    if (empty($pending)) {
-        echo $OUTPUT->notification('No hi ha fitxers a la carpeta de fitxers per importar');
-    } else {
-        echo '<ul>';
-        foreach($pending as $filepath => $file) {
-            echo '<li>'.$file;
-            echo ' [<a href="?action=delete&file=' . $file . '">Elimina de la carpeta d\'importació de fitxers</a>]';
             $filesize = round(filesize($filepath)/1024);
             echo ' '.$filesize.'kB</li>';
         }
