@@ -2,7 +2,7 @@
 
 /**
  * This class manages an ftp connection
- * 
+ *
  * @author IECISA @mmartinez (version 1.0)
  * @author UPCNET @sarjona (version 1.1)
  * @version 1.1
@@ -12,17 +12,17 @@ class ftp4p {
     /**
      * Variables to use
      */
-    private $connection, $host, $name, $pass, $permanent; // ftp 
+    private $connection, $host, $name, $pass, $permanent; // ftp
     private $logger;                   // log
     private $errors = array('connection' => false);      // errors
 
     /**
      * Class constructor
-     * 
+     *
      * @param string $host      -> ftp host name
      * @param string $user      -> ftp user name
      * @param string $pass      -> ftp password for the passed user name
-     * @param bool   $permanent -> if true ftp is connected during all the session, if false just connect when a transfer is requested  
+     * @param bool   $permanent -> if true ftp is connected during all the session, if false just connect when a transfer is requested
      * @param bool   $debug     -> if true full log is stored, if false just store a resume log
      * @param string $debugpath -> path where to store log file
      */
@@ -56,7 +56,7 @@ class ftp4p {
 
     /**
      * Connect to the ftp server
-     * 
+     *
      * @param string $host -> ftp host name
      * @param string $user -> ftp user name
      * @param string $pass -> ftp password for the passed user name
@@ -88,7 +88,7 @@ class ftp4p {
             $this->add_log('Connection failed, host "' . $this->host . '" unavailable', 'ERROR');
             $this->errors['connection'] = true;
             return false;
-        } 
+        }
         $this->add_log('Connected to host', 'DEBUG');
 
         //test login
@@ -108,7 +108,7 @@ class ftp4p {
 
     /**
      * Close the opened connection
-     * 
+     *
      * @return bool -> if true all was successfull, if false some thing fails
      */
     private function close_connection() {
@@ -128,7 +128,7 @@ class ftp4p {
 
     /**
      * Get a list with the fiels of a directory
-     * 
+     *
      * @param  string $dir -> path where get list
      * @return array       -> if all was ok return array, if not return false
      */
@@ -317,15 +317,17 @@ class ftp4p {
         }
 
         if (!ftp_delete($this->connection, $remotefile)) {
+            $this->add_log('Cannot delete remote file '.$remotefile, 'ERROR');
             return false;
         }
+        $this->add_log('Deleted remote file '.$remotefile, 'ERROR');
 
         return true;
     }
 
     /**
      * Check if isset the logger class, else denie any log
-     * 
+     *
      * @param bool $debug -> activate debug mode or not
      * @param string $path -> path where to store log file
      * @return bool       -> true if logger could be loaded or false if not

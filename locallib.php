@@ -220,12 +220,15 @@ class odissea_gtaf_synchronizer {
         if (is_array($this->files)) {
             foreach ($this->files as $file) {
                 $this->cronlog(' Retrieving file: '.$file);
-                if (!$this->ftp->get_file($file, $this->outputtmppath . '/' . $file, false)) {
+                $outputfile = $this->outputtmppath . '/' . $file;
+                if (!$this->ftp->get_file($file, $outputfile, false)) {
+                    @unlink($outputfile); // Delete if exists
                     $this->cronlog('  Cannot get file!');
                     continue;
+                } else {
+                    // Delete from FTP server the downloaded files
+                    $this->ftp->del_file($file);
                 }
-                // Delete from FTP server the downloaded files
-                $this->ftp->del_file($file);
             }
         }
 
@@ -276,7 +279,7 @@ class odissea_gtaf_synchronizer {
 
         return $results;
     }
-    
+
     private function cronlog($text) {
         if ($this->iscron) {
             mtrace($text);
