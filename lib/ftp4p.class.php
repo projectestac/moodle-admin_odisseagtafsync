@@ -162,6 +162,8 @@ class ftp4p {
             return false;
         }
 
+        $original_directory = ftp_pwd($this->connection);
+
         $this->add_log('Check getting path successfully', 'DEBUG');
 
         //try to get the files list
@@ -178,7 +180,9 @@ class ftp4p {
         foreach ($flist as $f) {
             if ($f != '.' && $f != '..') {
                 if (!@ftp_chdir($this->connection, $f)) {
-                    $flistcleaned[] = $f;
+                    $flistcleaned[] = $original_directory.'/'.$f;
+                } else {
+                    ftp_chdir($this->connection, $original_directory);
                 }
             }
         }
@@ -197,7 +201,7 @@ class ftp4p {
     /**
      * Download a file from the server
      */
-    function get_file($remotefile = '', $localfile = '', $returnhandler = true) {
+    function get_file($remotefile = "", $localfile = "", $returnhandler = true) {
 
         $this->add_log('Getting file '.$localfile.'...', 'DEBUG');
 
@@ -310,7 +314,7 @@ class ftp4p {
     /**
      * Delete file form ftp server
      */
-    function del_file($remotefile = '') {
+    function del_file($remotefile = "") {
 
         if (empty($remotefile)) {
             return false;
@@ -320,7 +324,7 @@ class ftp4p {
             $this->add_log('Cannot delete remote file '.$remotefile, 'ERROR');
             return false;
         }
-        $this->add_log('Deleted remote file '.$remotefile, 'ERROR');
+        $this->add_log('Deleted remote file '.$remotefile);
 
         return true;
     }

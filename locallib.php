@@ -117,6 +117,9 @@ class odissea_gtaf_synchronizer {
         $this->outputresultspath = $this->outputpath . '/' . self::SYNCHRO_RESULTSFOLDER;   // Temporaly folder where to download FTP content
         $this->prepare_folder($this->outputresultspath);
 
+        // Log Path
+        $this->prepare_folder($this->outputpath . '/log');
+
         make_writable_directory($this->outputpath . '/' . self::SYNCHRO_BACKUP_ERRORFOLDER);
     }
 
@@ -218,16 +221,16 @@ class odissea_gtaf_synchronizer {
 
         // Download getted files list
         if (is_array($this->files)) {
-            foreach ($this->files as $file) {
+            foreach ($this->files as $fullfile => $file) {
                 $this->cronlog(' Retrieving file: '.$file);
                 $outputfile = $this->outputtmppath . '/' . $file;
-                if (!$this->ftp->get_file($file, $outputfile, false)) {
+                if (!$this->ftp->get_file($fullfile, $outputfile, false)) {
                     @unlink($outputfile); // Delete if exists
                     $this->cronlog('  Cannot get file!');
                     continue;
                 } else {
                     // Delete from FTP server the downloaded files
-                    $this->ftp->del_file($file);
+                    $this->ftp->del_file($fullfile);
                 }
             }
         }
