@@ -180,7 +180,7 @@ class ftp4p {
         foreach ($flist as $f) {
             if ($f != '.' && $f != '..') {
                 if (!@ftp_chdir($this->connection, $f)) {
-                    $flistcleaned[] = $original_directory.'/'.$f;
+                    $flistcleaned[] = $f;
                 } else {
                     ftp_chdir($this->connection, $original_directory);
                 }
