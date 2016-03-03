@@ -298,9 +298,9 @@ class odissea_gtaf_synchronizer {
             $this->ftp = new ftp4p($settings->ftphost, $settings->ftpusername, $settings->ftppassword, true, true, $CFG->dataroot . '/' . $settings->outputpath);
             $files = $this->ftp->get_dir_list($this->inputpath);
             if ($files === FALSE) {
-                $this->isfolders = false;
                 $this->files = false;
                 $this->errors[] = get_string('ftpdirlisterror', 'tool_odisseagtafsync');
+                return;
             }
             $this->files = self::filter_files($files);
         }
