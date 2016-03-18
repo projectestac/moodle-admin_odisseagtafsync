@@ -84,7 +84,7 @@ if ($action && $filename) {
         foreach($pending as $filepath => $file) {
             echo '<li>'.$file;
             echo ' [<a href="?action=delete&file=' . $file . '">Elimina de la carpeta d\'importació de fitxers</a>]';
-            $filesize = round(filesize($filepath)/1024);
+            $filesize = ceil(filesize($filepath)/1024);
             echo ' '.$filesize.'kB</li>';
         }
         echo '</ul>';
@@ -102,7 +102,7 @@ if ($action && $filename) {
             } else {
                 echo ' [Ja existeix a la carpeta d\'importació]';
             }
-            $filesize = round(filesize($filepath)/1024);
+            $filesize = ceil(filesize($filepath)/1024);
             echo ' '.$filesize.'kB</li>';
         }
         echo '</ul>';
