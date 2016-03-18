@@ -75,7 +75,7 @@ class ftp4p {
             $this->errors['connection'] = true;
             return false;
         }
-        $this->add_log('Connection values: {host:' . $this->host . ', user:' . $this->user . ', pass:' . $this->pass . '}', 'DEBUG');
+        $this->add_log('Connection values: {host:' . $this->host . ', user:' . $this->user . '}', 'DEBUG');
 
         //test host
         $url = parse_url($this->host);
@@ -168,12 +168,11 @@ class ftp4p {
 
         //try to get the files list
         $flist = ftp_nlist($this->connection, $path);
-        if ($flist === FALSE) {
-            $this->add_log('Getting path fails, ftp nlist return error', 'ERROR');
+        if (empty($flist)){
+            $this->add_log('Getting files list successfully but there are no files in '.$path, 'INFO*');
             return false;
         }
-
-        $this->add_log('Getting path successfully', 'DEBUG');
+        $this->add_log('Getting files list successfully', 'DEBUG');
 
         //process list for just return files
         $flistcleaned = array();
