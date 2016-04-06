@@ -230,12 +230,24 @@ class ftp4p {
         }
         $this->add_log('Getting file open local file successfull', 'DEBUG');
 
-        //get remote file to local
-        if (!ftp_fget($this->connection, $f, $remotefile, FTP_BINARY)) {
-            $this->add_log('Getting file fails, imposible to download file fron ftp server', 'ERROR');
+        // Get remote file size and save it to log
+        $filesize = ftp_size($this->connection, $remotefile);
+        if ($filesize != -1 ) {
+            $this->add_log("The size of the file $remotefile is $filesize bytes", 'DEBUG');
+        } else {
+            $this->add_log('Getting file size fails', 'DEBUG');
+        }
+        //Get remote file to local if size if bigger than 0 bytes
+        if ($filesize != 0) {
+            if (!ftp_fget($this->connection, $f, $remotefile, FTP_BINARY)) {
+                $this->add_log('Getting file fails, imposible to download file fron ftp server', 'ERROR');
+                return false;
+            }
+            $this->add_log('Getting file downloaded successfully');
+        } else {
+            $this->add_log("File not downloaded because its size is 0 bytes ($remotefile)", 'DEBUG');
             return false;
         }
-        $this->add_log('Getting file downloaded successfull');
 
         //if connection is not permanetly close it
         if (!$this->permanent) {
@@ -328,6 +340,7 @@ class ftp4p {
         return true;
     }
 
+
     /**
      * Check if isset the logger class, else denie any log
      *
@@ -346,6 +359,10 @@ class ftp4p {
             debugging($e->getMessage());
         }
         return false;
+    }
+
+    public function is_error() {
+        return in_array(true, $this->errors);
     }
 
     /**

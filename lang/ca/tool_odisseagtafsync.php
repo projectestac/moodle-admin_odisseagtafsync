@@ -32,6 +32,7 @@ $string['createpatherror'] = 'No s\'ha pogut crear el directori: {$a}';
 $string['defaultcsvheader'] = 'Configuració importació CSV';
 $string['defaultuserheader'] = 'Configuració per defecte dels usuaris';
 $string['flatfilenotenabled'] = 'El connector d\'inscripció \'Fitxer de text pla (CSV)\' no està activat. Per poder processar els fitxers pendents cal habilitar-ho i tornar a executar el procés de sincronització.';
+$string['ftpconnectionerror'] = 'No s\'ha pogut connectar al servidor FTP especificat.';
 $string['ftpdirlisterror'] = 'No s\'ha pogut obtenir la llista de fitxers del directori del servidor FTP especificat.';
 $string['ftphost'] = 'Servidor FTP';
 $string['inputpath'] = 'Directori FTP';

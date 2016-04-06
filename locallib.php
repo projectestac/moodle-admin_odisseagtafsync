@@ -83,7 +83,7 @@ class odissea_gtaf_synchronizer {
     const SYNCHRO_UURESETPASSWORDS = UU_BULK_NEW;   //UU_PWRESET_NONE: No password is reset
                                                     //UU_PWRESET_WEAK: Only reset weak passwords
                                                     //UU_PWRESET_ALL: Reset all passwords
-    const SYNCHRO_MAILADMINS = 1;   //0: No
+    const SYNCHRO_MAILADMINS = 0;   //0: No
                                     //1: Yes
 
     function __construct($iscron = false) {
@@ -207,6 +207,10 @@ class odissea_gtaf_synchronizer {
         @raise_memory_limit('256M');
 
         $this->connect();
+        if (!empty ($this->errors)){
+            // Has been some error trying to connect
+            return "";
+        }
 
         $results = array();
 
@@ -226,7 +230,8 @@ class odissea_gtaf_synchronizer {
                 $outputfile = $this->outputtmppath . '/' . $file;
                 if (!$this->ftp->get_file($fullfile, $outputfile, false)) {
                     @unlink($outputfile); // Delete if exists
-                    $this->cronlog('  Cannot get file!');
+                    $this->cronlog('  Cannot get file! Check ftp log to find the error.');
+                    $this->errors[$file] = 'File not downloaded (probably because has 0 bytes). Check FTP log to find the exact error.';
                     continue;
                 } else {
                     // Delete from FTP server the downloaded files
@@ -268,7 +273,8 @@ class odissea_gtaf_synchronizer {
             // Send errors
             if (self::SYNCHRO_MAILADMINS == 1) {
                 $admin = get_admin();
-                $this->cronlog('Sending errors to '.$admin->email.'...');
+                $this->cronlog('Sending following errors to '.$admin->email.'...');
+                $this->cronlog(var_dump($this->errors, true));
                 $mailtext = "";
                 foreach ($this->errors as $filename => $error) {
                     $a = new StdClass();
@@ -277,6 +283,7 @@ class odissea_gtaf_synchronizer {
                     $mailtext .= get_string('mailerrorfile', 'tool_odisseagtafsync', $a)."\n";
                 }
                 email_to_user($admin, $admin, get_string('mailsubject', 'tool_odisseagtafsync'), $mailtext);
+                $this->cronlog('Mail error sent to '.$admin->email);
             }
         }
 
@@ -296,10 +303,14 @@ class odissea_gtaf_synchronizer {
         if (!$this->ftp) {
             $settings = get_config('tool_odisseagtafsync');
             $this->ftp = new ftp4p($settings->ftphost, $settings->ftpusername, $settings->ftppassword, true, true, $CFG->dataroot . '/' . $settings->outputpath);
+            if ($this->ftp->is_error()) {
+                $this->files = false;
+                $this->errors[] = get_string('ftpconnectionerror', 'tool_odisseagtafsync');
+                return;
+            }
             $files = $this->ftp->get_dir_list($this->inputpath);
             if ($files === FALSE) {
                 $this->files = false;
-                $this->errors[] = get_string('ftpdirlisterror', 'tool_odisseagtafsync');
                 return;
             }
             $this->files = self::filter_files($files);

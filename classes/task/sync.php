@@ -41,13 +41,25 @@ class sync extends \core\task\scheduled_task {
     /**
      * Performs the sync
      */
-    public function execute() {
+    public function execute($force = false) {
         global $CFG;
 
         $settings = get_config('tool_odisseagtafsync');
 
         if (empty($settings->ftphost)) {
             return;
+        }
+
+        $force = get_config('local_agora', 'tool_odisseagtafsync_forcecron', false);
+        // Only execute once a day (via CLI, assumes is cron)
+        if (CLI_SCRIPT && !$force) {
+            $last = get_config('local_agora', 'tool_odisseagtafsync_lastcron');
+            $cronperiod = 24 * 60 * 60; // Once a day
+            if ($last + $cronperiod > time()) {
+                mtrace('odisseagtafsync: tool_odisseagtafsync_cron() can only be run once a day via CLI. Last execution was: '.date('d/m/Y H:i:s', $last));
+                return true;
+            }
+            set_config('tool_odisseagtafsync_lastcron', time(), 'local_agora');
         }
 
         mtrace('odisseagtafsync: tool_odisseagtafsync_cron() started at '. date('H:i:s'));
@@ -68,7 +80,9 @@ class sync extends \core\task\scheduled_task {
                     }
                 }
             } else {
-                mtrace(get_string('nosyncfiles', 'tool_odisseagtafsync'));
+                if (empty($synchro->errors)) {
+                    mtrace(get_string('nosyncfiles', 'tool_odisseagtafsync'));
+                }
             }
         } catch (Exception $e) {
             mtrace('odisseagtafsync: tool_odisseagtafsync_cron() failed with an exception:');

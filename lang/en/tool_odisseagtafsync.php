@@ -33,6 +33,7 @@ $string['createpatherror'] = 'Folder {$a} can\'t be created';
 $string['defaultcsvheader'] = 'Import CSV settings';
 $string['defaultuserheader'] = 'Users default settings';
 $string['flatfilenotenabled'] = 'The \'Flat file (CSV)\' enrol plugin is not enabled. It\'s necessary to enable it to process pending files.';
+$string['ftpconnectionerror'] = 'Unable to connect to specified FTP server.';
 $string['ftpdirlisterror'] = 'Unable to get the list of files from specified FTP server.';
 $string['ftphost'] = 'FTP server';
 $string['inputpath'] = 'FTP folder';
