@@ -83,7 +83,7 @@ class odissea_gtaf_synchronizer {
     const SYNCHRO_UURESETPASSWORDS = UU_BULK_NEW;   //UU_PWRESET_NONE: No password is reset
                                                     //UU_PWRESET_WEAK: Only reset weak passwords
                                                     //UU_PWRESET_ALL: Reset all passwords
-    const SYNCHRO_MAILADMINS = 0;   //0: No
+    const SYNCHRO_MAILADMINS = 1;   //0: No
                                     //1: Yes
 
     function __construct($iscron = false) {
@@ -273,8 +273,8 @@ class odissea_gtaf_synchronizer {
             // Send errors
             if (self::SYNCHRO_MAILADMINS == 1) {
                 $admin = get_admin();
-                $this->cronlog('Sending following errors to '.$admin->email.'...');
-                $this->cronlog(var_dump($this->errors, true));
+                $this->cronlog('Sending errors to '.$admin->email.'...');
+                //$this->cronlog(var_dump($this->errors, true));
                 $mailtext = "";
                 foreach ($this->errors as $filename => $error) {
                     $a = new StdClass();
@@ -282,7 +282,24 @@ class odissea_gtaf_synchronizer {
                     $a->error = $error;
                     $mailtext .= get_string('mailerrorfile', 'tool_odisseagtafsync', $a)."\n";
                 }
-                email_to_user($admin, $admin, get_string('mailsubject', 'tool_odisseagtafsync'), $mailtext);
+                $admin->priority = 1;
+
+                //Send the message
+                $eventdata = new stdClass();
+                $eventdata->modulename        = 'odisseagtafsync';
+                $eventdata->userfrom          = 1;
+                $eventdata->userto            = $admin;
+                $eventdata->subject           = get_string('mailsubject', 'tool_odisseagtafsync');
+                $eventdata->fullmessage       = $mailtext;
+                $eventdata->fullmessageformat = FORMAT_MOODLE;
+                $eventdata->fullmessagehtml   = $mailtext;
+                $eventdata->smallmessage      = $mailtext;
+                $eventdata->component         = 'moodle';
+                $eventdata->name              = 'errors';
+
+                message_send($eventdata);
+
+                //email_to_user($admin, $admin, get_string('mailsubject', 'tool_odisseagtafsync'), $mailtext);
                 $this->cronlog('Mail error sent to '.$admin->email);
             }
         }
