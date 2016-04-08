@@ -7,7 +7,7 @@
  * @version 1.1
  *
  */
-final class log4p {
+final class odissea_log4p {
 
     /**
      * Variables to use
@@ -24,7 +24,7 @@ final class log4p {
     public static function instance($savetofile = false, $savetofilepath = '', $debug = false) {
         static $inst = null;
         if ($inst === null) {
-            $inst = new log4p($savetofile, $savetofilepath, $debug);
+            $inst = new odissea_log4p($savetofile, $savetofilepath, $debug);
         }
         return $inst;
     }
@@ -41,7 +41,7 @@ final class log4p {
 
         if ($savetofile == false) {
             $this->savetofile = false;
-            $this->add('log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
+            $this->add('odissea_log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
             return;
         }
 
@@ -68,7 +68,7 @@ final class log4p {
      * Used to close de file pointer
      */
     function __destruct() {
-        $this->add('log4p: Closing log file', 'DEBUG');
+        $this->add('odissea_log4p: Closing log file', 'DEBUG');
         if ($this->filelogpointer && !fclose($this->filelogpointer)) {
             $this->add('Logger: trying to close file log pointer failed');
         }
@@ -123,7 +123,7 @@ final class log4p {
         // Save in file
         if (!fwrite($this->filelogpointer, $str.$delimiter)) {
             $this->savetofile = false;
-            $this->add('log4p: addtofile cant write in log file. Save to file has been switch to off.', 'ERROR');
+            $this->add('odissea_log4p: addtofile cant write in log file. Save to file has been switch to off.', 'ERROR');
             return false;
         }
 
@@ -167,7 +167,7 @@ final class log4p {
         $this->filelogpointer = false;
         // Check if parameters are set to true and are correct
         if (empty($savetofilepath)) {
-            $this->add('log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
+            $this->add('odissea_log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
             return false;
         }
 
@@ -185,7 +185,7 @@ final class log4p {
         // Check if exits log folder
         if (!is_dir($savetofilepath)) {
             if (!@mkdir($savetofilepath)) {
-                $this->add('log4p: folder not exits and its imposible to create it', 'WARNING');
+                $this->add('odissea_log4p: folder not exits and its imposible to create it', 'WARNING');
                 return false;
             }
         }
@@ -200,18 +200,18 @@ final class log4p {
         $savetofilepath .= '/log/gtaf'.$site.'_'.date("Ymd").'.log';
         // Open or create log file
         if (!$file = fopen($savetofilepath, "a+")) {
-            $this->add('log4p: file not exits and its imposible to create it', 'WARNING');
+            $this->add('odissea_log4p: file not exits and its imposible to create it', 'WARNING');
             return false;
         }
 
         // Test if its posible to save in file
         if (!fwrite($file, $delimiter)) {
-            $this->add('log4p: imposible to write in log file. Save to file has been switch to off.', 'ERROR');
+            $this->add('odissea_log4p: imposible to write in log file. Save to file has been switch to off.', 'ERROR');
             return false;
         }
 
         $this->filelogpointer = $file;
-        $this->add('log4p: loaded correctly in '.$savetofilepath);
+        $this->add('odissea_log4p: loaded correctly in '.$savetofilepath);
         return true;
     }
 }

@@ -349,11 +349,11 @@ class ftp4p {
      * @return bool       -> true if logger could be loaded or false if not
      */
     private function get_logger($debug = false, $path = '') {
-        if (!@include_once('log4p.class.php')) {
+        if (!@include_once('odissea_log4p.class.php')) {
             return false;
         }
         try {
-            return log4p::instance(true, $path, $debug);
+            return odissea_log4p::instance(true, $path, $debug);
         } catch (Exception $e) {
             debugging('ERROR: Cannot initialize apligestlogger, there won\'t be any log.');
             debugging($e->getMessage());
