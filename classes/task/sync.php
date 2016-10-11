@@ -54,7 +54,7 @@ class sync extends \core\task\scheduled_task {
         // Only execute once a day (via CLI, assumes is cron)
         if (CLI_SCRIPT && !$force) {
             $last = get_config('local_agora', 'tool_odisseagtafsync_lastcron');
-            $cronperiod = 24 * 60 * 60; // Once a day
+            $cronperiod = 12 * 60 * 60; // Twice a day
             if ($last + $cronperiod > time()) {
                 mtrace('odisseagtafsync: tool_odisseagtafsync_cron() can only be run once a day via CLI. Last execution was: '.date('d/m/Y H:i:s', $last));
                 return true;
