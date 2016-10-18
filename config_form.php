@@ -184,7 +184,7 @@ class tool_odisseagtafsync_config_form extends moodleform {
             $mform->setDefault('country', $CFG->country);
         }
 
-        $choices = get_list_of_timezones();
+        $choices = core_date::get_list_of_timezones();
         $choices['99'] = get_string('serverlocaltime');
         $mform->addElement('select', 'timezone', get_string('timezone'), $choices);
         $mform->setDefault('timezone', $USER->timezone);
