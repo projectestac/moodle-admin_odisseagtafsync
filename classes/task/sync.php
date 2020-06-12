@@ -52,18 +52,20 @@ class sync extends \core\task\scheduled_task {
 
         $force = get_config('local_agora', 'tool_odisseagtafsync_forcecron', false);
         // Only execute once a day (via CLI, assumes is cron)
-        if (CLI_SCRIPT && !$force) {
-            $last = get_config('local_agora', 'tool_odisseagtafsync_lastcron');
-            $cronperiod = 12 * 60 * 60; // Twice a day
-            if ($last + $cronperiod > time()) {
-                mtrace('odisseagtafsync: tool_odisseagtafsync_cron() can only be run once a day via CLI. Last execution was: '.date('d/m/Y H:i:s', $last));
-                return true;
-            }
-            // The update of the timestamp of the last execution of the cron is moved to the point where the gtaf files are processed. This
-            // is because if no files are processed, no action is done and what's important is to know when the files were processed for
-            // the last time.
+        // redmine 5744
+        // disable execution control
+        //if (CLI_SCRIPT && !$force) {
+        //    $last = get_config('local_agora', 'tool_odisseagtafsync_lastcron');
+        //    $cronperiod = 12 * 60 * 60; // Twice a day
+        //    if ($last + $cronperiod > time()) {
+        //        mtrace('odisseagtafsync: tool_odisseagtafsync_cron() can only be run once a day via CLI. Last execution was: '.date('d/m/Y H:i:s', $last));
+        //        return true;
+        //    }
+            // moved after procesing files.
+            // this allow proces once a day the files, not just the cron
+            // if the files comes a bit later could generate a big delay in procesing files
             // set_config('tool_odisseagtafsync_lastcron', time(), 'local_agora');
-        }
+        //}
 
         mtrace('odisseagtafsync: tool_odisseagtafsync_cron() started at '. date('H:i:s'));
         try {
@@ -82,10 +84,13 @@ class sync extends \core\task\scheduled_task {
                         mtrace($result);
                     }
                 }
-                // Update the timestamp of cron execution when the files are processed. Files can only be processed twice a day. Setting
-                // it to once a day could generate a delay of more than 12h on next process.
+                // redmine 5744
+                // set the time when the files where processed only if there are files
+                // this way allow delays on files to be served. if it's allowed only one call a day
+                // could generate a delay of more than 12h on process again
+                // removed limit of times processed. By cron is only processed between 5-7 am
                 set_config('tool_odisseagtafsync_lastcron', time(), 'local_agora');
-                mtrace('odisseagtafsync: tool_odisseagtafsync_cron() ' . date('d/m/Y H:i:s', $last) . ' files processed:' . count($results));
+                mtrace('odisseagtafsync: tool_odisseagtafsync_cron() '.date('d/m/Y H:i:s', $last).' files processed:'.count($results));
             } else {
                 if (empty($synchro->errors)) {
                     mtrace(get_string('nosyncfiles', 'tool_odisseagtafsync'));
