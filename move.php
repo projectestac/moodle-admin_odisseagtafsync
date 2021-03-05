@@ -17,7 +17,7 @@
 
 /**
  * Tool to synchronize users between GTAF and Odissea. It download CSV files from
- * specified FTP server and process them
+ * specified SFTP server and process them
  *
  * @package    tool
  * @subpackage odisseagtafsync
@@ -26,27 +26,29 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__) . '/../../../config.php');
-require_once($CFG->libdir . '/adminlib.php');
-require_once(dirname(__FILE__) . '/locallib.php');
+require_once dirname(__FILE__) . '/../../../config.php';
+require_once $CFG->libdir . '/adminlib.php';
+require_once dirname(__FILE__) . '/locallib.php';
+require_once dirname(__FILE__) . '/classes/odissea_gtaf_synchronizer.class.php';
+require_once dirname(__FILE__) . '/lib/sftp.class.php';
+require_once dirname(__FILE__) . '/lib/odissea_log4p.class.php';
 
 // admin_externalpage_setup calls require_login and checks moodle/site:config
 admin_externalpage_setup('gtafmove');
 
 $renderer = $PAGE->get_renderer('tool_odisseagtafsync');
-
 $header = get_string('pluginname', 'tool_odisseagtafsync');
-
 $settings = get_config('tool_odisseagtafsync');
-
-$returnurl = new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/move.php');
+$returnurl = new moodle_url('/' . $CFG->admin . '/tool/odisseagtafsync/move.php');
 
 $synchro = new odissea_gtaf_synchronizer();
 $action = optional_param('action', false, PARAM_TEXT);
 $filename = false;
+
 if ($action) {
     $filename = required_param('file', PARAM_TEXT);
 }
+
 if ($action && $filename) {
     $confirm = optional_param('confirm', false, PARAM_BOOL);
     if ($confirm) {
@@ -62,12 +64,12 @@ if ($action && $filename) {
         }
 
     } else {
-        $accio = $action == 'delete' ? 'suprimir' : 'copiar';
+        $accio = ($action == 'delete') ? 'suprimir' : 'copiar';
         echo $renderer->header();
         echo $renderer->heading(get_string('pluginname', 'tool_odisseagtafsync'));
         echo $renderer->box(get_string('managefiledesc', 'tool_odisseagtafsync'));
-        $message = 'Estàs segur que vols '.$accio.' el fitxer '.$filename.'?';
-        echo $OUTPUT->confirm($message, '?action='.$action.'&file='.$filename.'&confirm=true', "");
+        $message = 'Estàs segur que vols ' . $accio . ' el fitxer ' . $filename . '?';
+        echo $OUTPUT->confirm($message, '?action=' . $action . '&file=' . $filename . '&confirm=true', "");
     }
 } else {
     echo $renderer->header();
@@ -81,11 +83,11 @@ if ($action && $filename) {
         echo $OUTPUT->notification('No hi ha fitxers a la carpeta de fitxers per importar');
     } else {
         echo '<ul>';
-        foreach($pending as $filepath => $file) {
-            echo '<li>'.$file;
+        foreach ($pending as $filepath => $file) {
+            echo '<li>' . $file;
             echo ' [<a href="?action=delete&file=' . $file . '">Elimina de la carpeta d\'importació de fitxers</a>]';
-            $filesize = ceil(filesize($filepath)/1024);
-            echo ' '.$filesize.'kB</li>';
+            $filesize = ceil(filesize($filepath) / 1024);
+            echo ' ' . $filesize . 'kB</li>';
         }
         echo '</ul>';
     }
@@ -102,8 +104,8 @@ if ($action && $filename) {
             } else {
                 echo ' [Ja existeix a la carpeta d\'importació]';
             }
-            $filesize = ceil(filesize($filepath)/1024);
-            echo ' '.$filesize.'kB</li>';
+            $filesize = ceil(filesize($filepath) / 1024);
+            echo ' ' . $filesize . ' kB</li>';
         }
         echo '</ul>';
     }

@@ -17,28 +17,32 @@
 
 /**
  * Tool to synchronize users between GTAF and Odissea. It download CSV files from
- * specified FTP server and process them
+ * specified SFTP server and process them
  *
  * @package    tool
  * @subpackage odisseagtafsync
- * @copyright  2013 Departament d'Ensenyament de la Generalitat de Catalunya
+ * @copyright  2013-2021 Departament d'Ensenyament de la Generalitat de Catalunya
  * @author     Sara Arjona Téllez <sarjona@xtec.cat>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__) . '/../../../config.php');
-require_once($CFG->libdir . '/adminlib.php');
-require_once(dirname(__FILE__) . '/locallib.php');
+require_once dirname(__FILE__) . '/../../../config.php';
+require_once $CFG->libdir . '/adminlib.php';
+require_once dirname(__FILE__) . '/locallib.php';
+require_once dirname(__FILE__) . '/classes/odissea_gtaf_synchronizer.class.php';
+require_once dirname(__FILE__) . '/classes/odissea_uu_progress_tracker.class.php';
+require_once dirname(__FILE__) . '/lib/sftp.class.php';
+require_once dirname(__FILE__) . '/lib/odissea_log4p.class.php';
 
 // admin_externalpage_setup calls require_login and checks moodle/site:config
 admin_externalpage_setup('odisseagtafsync');
 
-$renderer = $PAGE->get_renderer('tool_odisseagtafsync');
-
 $header = get_string('pluginname', 'tool_odisseagtafsync');
-
-$synchro = new odissea_gtaf_synchronizer();
+$renderer = $PAGE->get_renderer('tool_odisseagtafsync');
 $sync = optional_param('sync', false, PARAM_BOOL);
+
+$synchro = new odissea_gtaf_synchronizer(false);
+
 if ($sync) {
     $result = $synchro->synchro();
     echo $renderer->sync_page(1, $result, $synchro->errors);
@@ -47,27 +51,34 @@ if ($sync) {
     echo $renderer->heading(get_string('pluginname', 'tool_odisseagtafsync'));
     echo $renderer->box(get_string('manualsyncdesc', 'tool_odisseagtafsync'));
 
-    $files = $synchro->get_files_ftp();
-    if (empty($files)) {
-        echo $OUTPUT->notification('No hi ha fitxers al FTP');
-    } else {
-        echo '<strong>Fitxers disponibles al servidor:</strong>';
-        echo '<ul>';
-        foreach($files as $file) {
-            echo '<li>'.$file.'</li>';
+    try {
+        $files = $synchro->get_files_sftp();
+
+        if (empty($files)) {
+            echo $OUTPUT->notification('No hi ha fitxers al servidor SFTP');
+        } else {
+            echo '<strong>Fitxers disponibles al servidor:</strong>';
+            echo '<ul>';
+            foreach ($files as $file) {
+                echo '<li>' . $file . '</li>';
+            }
+            echo '</ul>';
         }
-        echo '</ul>';
+    } catch (Exception $exception) {
+        echo $renderer->error_text($exception->getMessage());
+        echo '<br /><br />';
     }
 
     $pending = $synchro->get_files_pending();
+
     echo '<strong>Fitxers pendents d\'importar:</strong>';
+
     if (empty($pending)) {
         echo $OUTPUT->notification('No hi ha fitxers a la carpeta de fitxers per importar');
     } else {
         echo '<ul>';
-        foreach($pending as $filepath => $file) {
-            $filesize = round(filesize($filepath)/1024);
-            echo '<li>'.$file.' '.$filesize.'kB</li>';
+        foreach ($pending as $filepath => $file) {
+            echo '<li>' . $file . ' - ' . filesize($filepath) . ' bytes (' . round(filesize($filepath) / 1024) . ' kB)</li>';
         }
         echo '</ul>';
     }

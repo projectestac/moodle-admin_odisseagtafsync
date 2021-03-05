@@ -17,7 +17,7 @@
 
 /**
  * Tool to synchronize users between GTAF and Odissea. It download CSV files from
- * specified FTP server and process them
+ * specified SFTP server and process them
  *
  * @package    tool
  * @subpackage odisseagtafsync
@@ -26,10 +26,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once(dirname(__FILE__) . '/../../../config.php');
-require_once($CFG->libdir . '/adminlib.php');
-require_once(dirname(__FILE__) . '/locallib.php');
-require_once(dirname(__FILE__) . '/config_form.php');
+require_once dirname(__FILE__) . '/../../../config.php';
+require_once $CFG->libdir . '/adminlib.php';
+require_once dirname(__FILE__) . '/locallib.php';
+require_once dirname(__FILE__) . '/classes/odissea_gtaf_synchronizer.class.php';
+require_once dirname(__FILE__) . '/config_form.php';
 
 // admin_externalpage_setup calls require_login and checks moodle/site:config
 admin_externalpage_setup('gtafsettings');
@@ -46,9 +47,9 @@ if ($form_config->is_cancelled()) {
     $returnurl = new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php');
     redirect($returnurl);
 } else if ($fromform = $form_config->get_data()) {
-    set_config('ftphost', $fromform->ftphost, 'tool_odisseagtafsync');
-    set_config('ftpusername', $fromform->ftpusername, 'tool_odisseagtafsync');
-    set_config('ftppassword', $fromform->ftppassword, 'tool_odisseagtafsync');
+    set_config('sftphost', $fromform->sftphost, 'tool_odisseagtafsync');
+    set_config('sftpusername', $fromform->sftpusername, 'tool_odisseagtafsync');
+    set_config('sftppassword', $fromform->sftppassword, 'tool_odisseagtafsync');
     set_config('inputpath', $fromform->inputpath, 'tool_odisseagtafsync');
     set_config('outputpath', $fromform->outputpath, 'tool_odisseagtafsync');
 
@@ -72,9 +73,9 @@ if ($form_config->is_cancelled()) {
     set_config('lang', $fromform->lang, 'tool_odisseagtafsync');
 
     $returnurl = new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/config.php');
+
     redirect($returnurl);
 }
-
 
 echo $renderer->header();
 echo $renderer->heading(get_string('pluginname', 'tool_odisseagtafsync'));

@@ -25,12 +25,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+defined('MOODLE_INTERNAL') || die();
 
 if (get_protected_agora()) {
     $ADMIN->add('users', new admin_category('gtaf', get_string('pluginname', 'tool_odisseagtafsync')));
     $ADMIN->add('gtaf',
-            new admin_externalpage('odisseagtafsync', get_string('manualsync', 'tool_odisseagtafsync'),
+        new admin_externalpage('odisseagtafsync', get_string('manualsync', 'tool_odisseagtafsync'),
             $CFG->wwwroot . '/' . $CFG->admin . '/tool/odisseagtafsync/index.php'));
     $ADMIN->add('gtaf',
         new admin_externalpage('gtafmove', get_string('managefiles', 'tool_odisseagtafsync'),

@@ -39,16 +39,16 @@ class tool_odisseagtafsync_config_form extends moodleform {
 
         $mform = $this->_form;
 
-        // FTP configuration params
+        // SFTP configuration params
         $mform->addElement('header', 'settingsheader', get_string('configheader', 'tool_odisseagtafsync'));
 
-        $mform->addElement('text', 'ftphost', get_string('ftphost', 'tool_odisseagtafsync'));
-        $mform->setType('ftphost', PARAM_TEXT);
+        $mform->addElement('text', 'sftphost', get_string('sftphost', 'tool_odisseagtafsync'));
+        $mform->setType('sftphost', PARAM_TEXT);
 
-        $mform->addElement('text', 'ftpusername', get_string('username', 'tool_odisseagtafsync'));
-        $mform->setType('ftpusername', PARAM_TEXT);
+        $mform->addElement('text', 'sftpusername', get_string('username', 'tool_odisseagtafsync'));
+        $mform->setType('sftpusername', PARAM_TEXT);
 
-        $mform->addElement('passwordunmask', 'ftppassword', get_string('password', 'tool_odisseagtafsync'));
+        $mform->addElement('passwordunmask', 'sftppassword', get_string('password', 'tool_odisseagtafsync'));
 
         $mform->addElement('text', 'inputpath', get_string('inputpath', 'tool_odisseagtafsync'));
         $mform->addHelpButton('inputpath', 'inputpath', 'tool_odisseagtafsync');
@@ -196,5 +196,3 @@ class tool_odisseagtafsync_config_form extends moodleform {
         $this->add_action_buttons();
     }
 }
-
-

@@ -27,6 +27,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2015012501;
+$plugin->version   = 2021032300;
 $plugin->requires  = 2012112900;
 $plugin->component = 'tool_odisseagtafsync';

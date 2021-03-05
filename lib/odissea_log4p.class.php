@@ -1,25 +1,25 @@
 <?php
+
 /**
  * This class takes, process, save and show log during the live of the object monitored
- *
  *
  * @author IECISA @mmartinez
  * @version 1.1
  *
  */
-final class odissea_log4p {
-
-    /**
-     * Variables to use
-     */
-    private $log = array();
+final class odissea_log4p
+{
+    private $log = [];
     private $savetofile;
     private $debug;
 
     /**
-     * Call this method to get singleton
+     * Call this method to get the singleton
      *
-     * @return mailsender
+     * @param false $savetofile
+     * @param string $savetofilepath
+     * @param false $debug
+     * @return odissea_log4p|null
      */
     public static function instance($savetofile = false, $savetofilepath = '', $debug = false) {
         static $inst = null;
@@ -29,34 +29,20 @@ final class odissea_log4p {
         return $inst;
     }
 
-
     /**
      * Class constructor
      *
-     * @param bool $savetofile -> set the functionality savetofile on or off
-     * @param string $savetofilepath -> path and file name where the log have to be saved when $state is set to true
+     * @param bool $savetofile Set on/off the functionality to save to file
+     * @param string $savetofilepath -> Path and filename where the log have to be saved when $savetofile is set to true
+     * @param bool $debug
      */
     private function __construct($savetofile = false, $savetofilepath = '', $debug = false) {
         $this->debug = $debug;
 
         if ($savetofile == false) {
             $this->savetofile = false;
-            $this->add('odissea_log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
+            $this->add('odissea_log4p: Log set to off as requested', 'WARNING');
             return;
-        }
-
-        // Set default path location
-        if (empty($savetofilepath)) {
-            // Get actuall path
-            $pwd = dirname(__FILE__);
-            $pwd = str_replace('\\', '/', $pwd);
-            // Go one folder up
-            $pwdarray = explode ('/', $pwd);
-            $pwd = "";
-            for ($i = 0; $i < count($pwdarray) - 1; $i++) {
-                $pwd .= $pwdarray[$i].'/';
-            }
-            $savetofilepath = $pwd.'log';
         }
 
         $this->savetofile = $this->loadsavetofile($savetofilepath);
@@ -79,10 +65,10 @@ final class odissea_log4p {
     /**
      * Add entry to the log
      *
-     * @param string $str  -> log entry text
-     * @param string $type -> posible values ERROR, WARNING, INFO
+     * @param string $str Log entry text
+     * @param string $type Allowed values: ERROR, WARNING, INFO
      */
-    function add($str, $type = 'INFO*') {
+    public function add($str, $type = 'INFO') {
 
         if ($type == 'DEBUG' && !$this->debug) {
             // Debug not allowed
@@ -90,38 +76,36 @@ final class odissea_log4p {
         }
 
         // Alowed type values
-        $typesallowed = array('ERROR', 'WARNING', 'INFO*', 'DEBUG');
+        $typesallowed = ['ERROR', 'WARNING', 'INFO', 'DEBUG'];
 
         if (!in_array($type, $typesallowed)) {
-                $type = 'UNKNOWN';
+            $type = 'UNKNOWN';
         }
 
         // Add log to our variable
-        $this->log[] = date('[Y-m-d H:i:s] ').' *'.$type.'*   '.$str;
+        $this->log[] = date('[Y-m-d H:i:s] ') . $type . ': ' . $str;
 
         // Save log to file if its switched on
         if ($this->savetofile) {
             $this->addtofile($this->log[count($this->log) - 1]);
         }
-
-        return;
     }
 
     /**
      * Save log entry in a file
      *
-     * @param string $str       -> log entry text
-     * @param string $delimiter -> characters used to diference one line from other
+     * @param string $str Log entry text
+     * @param string $delimiter Characters used to distinguish one line from other
+     * @return bool
      */
-    private function addtofile ($str = '', $delimiter = "\n") {
+    private function addtofile($str = '', $delimiter = "\n"): bool {
 
-        // Check if parameter is not empty
         if (empty($str)) {
             return false;
         }
 
         // Save in file
-        if (!fwrite($this->filelogpointer, $str.$delimiter)) {
+        if (!fwrite($this->filelogpointer, $str . $delimiter)) {
             $this->savetofile = false;
             $this->add('odissea_log4p: addtofile cant write in log file. Save to file has been switch to off.', 'ERROR');
             return false;
@@ -133,10 +117,10 @@ final class odissea_log4p {
     /**
      * Convert log array to a string using the defined delimiter
      *
-     * @param  string $delimiter -> characters used to diference one line from other
+     * @param string $delimiter -> characters used to diference one line from other
      * @return string            -> string with all the entries in log separated by the delimeter
      */
-    public function get_log ($delimiter = "\n") {
+    public function get_log($delimiter = "\n") {
         if (empty($this->log)) {
             return false;
         }
@@ -150,68 +134,67 @@ final class odissea_log4p {
      */
     public function print_log() {
         if ($log = $this->get_log('<br>')) {
-            echo '<br><br><b>Log generated on '.date("d-m-Y H:i:s").':</b><br>'.$log;
+            echo '<br><br><b>Log generated on ' . date("d-m-Y H:i:s") . ':</b><br>' . $log;
         }
     }
 
     /**
      * Function that put the saver on or off if savetofilepath exits and is writable
      *
-     * @param  bool   $state          -> set the function savetofile on or off
-     * @param  string $savetofilepath -> path and file name where the log have to be saved when $state is set to true
-     * @param  string $delimiter      -> characters used to diference one line from other
+     * @param string $savetofilepath -> path and file name where the log have to be saved when $state is set to true
+     * @param string $delimiter -> characters used to distinguish one line from another
      * @return bool                   -> true if saver could be switched to on or false if not
      */
-    private function loadsavetofile($savetofilepath = "", $delimiter = "\n", $site = false) {
+    private function loadsavetofile($savetofilepath = '', $delimiter = "\n") {
 
         $this->filelogpointer = false;
+
         // Check if parameters are set to true and are correct
         if (empty($savetofilepath)) {
-            $this->add('odissea_log4p: its off becouse the parameters to switch it on sets it', 'WARNING');
+            $this->add('odissea_log4p: Missing file to save log. Log won\'t be saved to file.', 'WARNING');
             return false;
         }
 
-        // Prepare savetofilepath parameter
-        $savetofilepath = str_replace('\\', '/', $savetofilepath);
-
-        // Delete filename if needed
+        // Remove filename if present
         $stringtosearch = '.log';
-        if (substr($savetofilepath, - strlen($stringtosearch)) === $stringtosearch) {
+        if (substr($savetofilepath, -strlen($stringtosearch)) === $stringtosearch) {
             $filepatharray = explode("/", $savetofilepath);
             array_pop($filepatharray);
             $savetofilepath = implode("/", $filepatharray);
         }
 
-        // Check if exits log folder
+        // Check if log folder exits
         if (!is_dir($savetofilepath)) {
-            if (!@mkdir($savetofilepath)) {
-                $this->add('odissea_log4p: folder not exits and its imposible to create it', 'WARNING');
+            if (!mkdir($savetofilepath)) {
+                $this->add('odissea_log4p: Directory ' . $savetofilepath . ' does not exist and it was not possible to create it.', 'WARNING');
                 return false;
             }
         }
 
         // Erase old files
-        $site = $site ? '_'.$site : "";
-        $search = $savetofilepath.'/log/gtaf'.$site.'_'.date("Ym", strtotime("-2 month"));
-        foreach (glob($search.'*.log') as $filename) {
+        $search = $savetofilepath . '/log/gtaf' . '_' . date("Ym", strtotime("-2 month"));
+        foreach (glob($search . '*.log') as $filename) {
             unlink($filename);
         }
+
         // Add Filename
-        $savetofilepath .= '/log/gtaf'.$site.'_'.date("Ymd").'.log';
+        $savetofilepath .= '/log/gtaf' . '_' . date("Ymd") . '.log';
         // Open or create log file
         if (!$file = fopen($savetofilepath, "a+")) {
-            $this->add('odissea_log4p: file not exits and its imposible to create it', 'WARNING');
+            $this->add('odissea_log4p: File ' . $savetofilepath . 'does not exit and it was not possible to create it.', 'WARNING');
             return false;
         }
 
         // Test if its posible to save in file
         if (!fwrite($file, $delimiter)) {
-            $this->add('odissea_log4p: imposible to write in log file. Save to file has been switch to off.', 'ERROR');
+            $this->add('odissea_log4p: Impossible to write in log file. Save to file has been switched off.', 'ERROR');
             return false;
         }
 
         $this->filelogpointer = $file;
-        $this->add('odissea_log4p: loaded correctly in '.$savetofilepath);
+
+        $this->add('odissea_log4p: loaded correctly in ' . $savetofilepath);
+
         return true;
     }
 }

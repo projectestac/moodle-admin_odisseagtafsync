@@ -29,12 +29,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-class tool_odisseagtafsync_renderer extends plugin_renderer_base {
-
+class tool_odisseagtafsync_renderer extends plugin_renderer_base
+{
     public function sync_page($run, $results, $errors) {
         $output = '';
         $output .= $this->header();
         $output .= $this->heading(get_string('pluginname', 'tool_odisseagtafsync'));
+
         if (!empty($errors)) {
             $strerror = implode('<br/><br/>', $errors);
             $output .= '<br/>';
@@ -56,6 +57,7 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
 
         $output .= $this->back_to_index($run);
         $output .= $this->footer();
+
         return $output;
     }
 
@@ -64,30 +66,37 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
 
         $output = '';
         $output .= $this->heading($file);
-        if (!empty($response)) $output .= '<br/>'.$this->container($response[1]);
+
+        if (!empty($response)) {
+            $output .= '<br/>' . $this->container($response[1]);
+        }
+
         $output .= $this->box_start('boxwidthnormal boxaligncenter generalbox', 'uploadresults');
-        $output .=  '<p>';
+        $output .= '<p>';
+
         if ($optype != UU_USER_UPDATE) {
-            $output .=  get_string('userscreated', 'tool_uploaduser').': '.$usersnew.'<br />';
+            $output .= get_string('userscreated', 'tool_uploaduser') . ': ' . $usersnew . '<br />';
         }
         if ($optype == UU_USER_UPDATE or $optype == UU_USER_ADD_UPDATE) {
-            $output .=  get_string('usersupdated', 'tool_uploaduser').': '.$usersupdated.'<br />';
+            $output .= get_string('usersupdated', 'tool_uploaduser') . ': ' . $usersupdated . '<br />';
         }
         if ($allowdeletes) {
-            $output .=  get_string('usersdeleted', 'tool_uploaduser').': '.$deletes.'<br />';
-            $output .=  get_string('deleteerrors', 'tool_uploaduser').': '.$deleteerrors.'<br />';
+            $output .= get_string('usersdeleted', 'tool_uploaduser') . ': ' . $deletes . '<br />';
+            $output .= get_string('deleteerrors', 'tool_uploaduser') . ': ' . $deleteerrors . '<br />';
         }
         if ($allowrenames) {
-            $output .=  get_string('usersrenamed', 'tool_uploaduser').': '.$renames.'<br />';
-            $output .=  get_string('renameerrors', 'tool_uploaduser').': '.$renameerrors.'<br />';
+            $output .= get_string('usersrenamed', 'tool_uploaduser') . ': ' . $renames . '<br />';
+            $output .= get_string('renameerrors', 'tool_uploaduser') . ': ' . $renameerrors . '<br />';
         }
         if ($usersskipped) {
-            $output .=  get_string('usersskipped', 'tool_uploaduser').': '.$usersskipped.'<br />';
+            $output .= get_string('usersskipped', 'tool_uploaduser') . ': ' . $usersskipped . '<br />';
         }
-        $output .=  get_string('usersweakpassword', 'tool_uploaduser').': '.$weakpasswords.'<br />';
-        $output .=  get_string('errors', 'tool_uploaduser').': '.$userserrors;
-        $output .=  '</p>';
+
+        $output .= get_string('usersweakpassword', 'tool_uploaduser') . ': ' . $weakpasswords . '<br />';
+        $output .= get_string('errors', 'tool_uploaduser') . ': ' . $userserrors;
+        $output .= '</p>';
         $output .= $this->box_end();
+
         return $output;
     }
 
@@ -96,55 +105,62 @@ class tool_odisseagtafsync_renderer extends plugin_renderer_base {
 
         $output = '';
         $output .= $this->heading($file);
-        $output .=  '<p><br/>';
-        $output .=  get_string('preparedenrolmentsok', 'tool_odisseagtafsync', $flatfilelocation);
-        $output .=  '</p>';
+        $output .= '<p><br/>';
+        $output .= get_string('preparedenrolmentsok', 'tool_odisseagtafsync', $flatfilelocation);
+        $output .= '</p>';
         return $output;
     }
 
     public function process_restore_file_page($file) {
         $output = '';
         $output .= $this->heading($file);
-        $output .=  '<p><br/>';
-        $output .=  get_string('processrestorefileok', 'tool_odisseagtafsync');
-        $output .=  '<br/><br/></p>';
+        $output .= '<p><br/>';
+        $output .= get_string('processrestorefileok', 'tool_odisseagtafsync');
+        $output .= '<br/><br/></p>';
         return $output;
     }
 
     public function process_delete_file_page($file) {
         $output = '';
         $output .= $this->heading($file);
-        $output .=  '<p><br/>';
-        $output .=  get_string('processdeletefileok', 'tool_odisseagtafsync');
-        $output .=  '<br/><br/></p>';
+        $output .= '<p><br/>';
+        $output .= get_string('processdeletefileok', 'tool_odisseagtafsync');
+        $output .= '<br/><br/></p>';
         return $output;
     }
 
-
     /**
      * Render a link in a div, such as the 'Back to plugin main page' link.
+     *
      * @param $url the link URL.
      * @param $text the link text.
      * @return string html to output.
      */
     public function end_of_page_link($url, $text) {
-        return html_writer::tag('div', html_writer::link($url ,$text),
-                array('class' => 'mdl-align'));
+        return html_writer::tag('div', html_writer::link($url, $text), ['class' => 'mdl-align']);
     }
 
     /**
      * Output a link back to the plugin index page.
+     *
+     * @param $run
      * @return string html to output.
+     * @throws coding_exception
+     * @throws moodle_exception
      */
     public function back_to_index($run) {
         global $CFG;
 
         if ($run == 1) {
-            return $this->end_of_page_link(new moodle_url('/'. $CFG->admin . '/tool/odisseagtafsync/index.php'),
-                get_string('backtoindex', 'tool_odisseagtafsync'));
+            return $this->end_of_page_link(
+                new moodle_url('/' . $CFG->admin . '/tool/odisseagtafsync/index.php'),
+                get_string('backtoindex', 'tool_odisseagtafsync')
+            );
         } else {
-            return $this->end_of_page_link(new moodle_url('/' . $CFG->admin . '/tool/odisseagtafsync/move.php'),
-                get_string('backtoindex', 'tool_odisseagtafsync'));
+            return $this->end_of_page_link(
+                new moodle_url('/' . $CFG->admin . '/tool/odisseagtafsync/move.php'),
+                get_string('backtoindex', 'tool_odisseagtafsync')
+            );
         }
     }
 
