@@ -68,7 +68,7 @@ class sftp {
      * @return bool
      * @throws Exception
      */
-    private function connect(): bool {
+    public function connect(): bool {
 
         $this->add_log('Entering function sftp::connect', 'DEBUG');
 
@@ -111,8 +111,6 @@ class sftp {
             $this->add_log('Loaded contents of file ' . $local_file, 'DEBUG');
         }
 
-        $this->connect();
-
         $stream = open("ssh2.sftp://$this->sftp$remote_file", 'w');
 
         if (!$stream) {
@@ -131,7 +129,7 @@ class sftp {
         }
 
         fclose($stream);
-        $this->disconnect();
+
     }
 
     /**
@@ -154,8 +152,6 @@ class sftp {
         if ($this->errors['connection']) {
             return false;
         }
-
-        $this->connect();
 
         if (!$file = fopen($local_file, 'w+')) {
             return false;
@@ -181,7 +177,6 @@ class sftp {
             $this->add_log('Saved local file ' . $local_file, 'DEBUG');
         }
 
-        $this->disconnect();
         return true;
 
     }
@@ -201,8 +196,6 @@ class sftp {
             return false;
         }
 
-        $this->connect();
-
         if (!ssh2_sftp_unlink($this->sftp, $remote_file)) {
             $this->disconnect();
             throw new Exception("Could not remove remote file: $remote_file.");
@@ -210,7 +203,6 @@ class sftp {
             $this->add_log('Deleted remote file ' . $remote_file, 'DEBUG');
         }
 
-        $this->disconnect();
         return true;
 
     }
@@ -272,7 +264,7 @@ class sftp {
     /**
      * Close the SSH connection
      */
-    private function disconnect() {
+    public function disconnect() {
 
         $this->add_log('Entering function sftp::disconnect', 'DEBUG');
 

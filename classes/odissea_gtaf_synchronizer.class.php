@@ -254,6 +254,9 @@ class odissea_gtaf_synchronizer {
 
         // Download gotten files list
         if (is_array($this->files)) {
+            // Connect to SFTP server.
+            $this->sftp->connect();
+
             foreach ($this->files as $fullfile => $file) {
                 $this->cronlog(' Retrieving file: ' . $file);
                 $outputfile = $this->outputtmppath . '/' . $file;
@@ -264,11 +267,14 @@ class odissea_gtaf_synchronizer {
                     $this->cronlog(' Cannot get file! Check sftp log to find the error.');
                     $this->errors[$file] = 'File not downloaded. Check SFTP log to find the error.';
                     continue;
-                } else {
-                    // Delete the downloaded file from SFTP server
-                    $this->sftp->del_file($fullfile);
                 }
+
+                // Delete the downloaded file from SFTP server
+                $this->sftp->del_file($fullfile);
             }
+
+            // Disconnect from SFTP server.
+            $this->sftp->disconnect();
         }
 
         // Check if there are new files
